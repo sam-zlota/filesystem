@@ -1,2 +1,4 @@
 # turbo-spoon
-A simple file system implementation
+a FUSE filesystem driver that will let you mount a 1MB disk image (data file) as a filesystem
+
+
