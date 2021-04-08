@@ -5,14 +5,14 @@
 
 #define DIR_NAME 48
 
-#include "slist.h"
+// #include "slist.h"
 #include "pages.h"
 #include "inode.h"
 
 typedef struct dirent {
     char name[DIR_NAME];
     int  inum;
-    char _reserved[12];
+    // char _reserved[12];
 } dirent;
 
 void directory_init();

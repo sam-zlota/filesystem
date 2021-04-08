@@ -52,6 +52,15 @@ join_to_path(char* buf, char* item)
     strcat(buf, item);
 }
 
-
+// void
+// check_rv(int rv)
+// {
+//     if (rv == -1) {
+//         perror("oops");
+//         fflush(stdout);
+//         fflush(stderr);
+//         abort();
+//     }
+// }
 
 #endif
