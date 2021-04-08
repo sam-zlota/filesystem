@@ -26,7 +26,7 @@ void bitmap_put(void* bm, int ii, int vv) {
     int bytes = ii / 8;
     uint8_t* val = (uint8_t*)(bm + bytes);
     if(vv) 
-        *val = *val | pow(remainder);
+        *val = *val | powr(remainder);
     else
         *val = *val & powr(remainder);
 }
