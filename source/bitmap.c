@@ -20,8 +20,6 @@ int bitmap_get(void* bm, int ii) {
 
 }
 
-
-
 void bitmap_put(void* bm, int ii, int vv) {
     int remainder = ii % 8; 
     int bytes = ii / 8;
