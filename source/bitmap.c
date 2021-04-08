@@ -1,7 +1,7 @@
 
 #include <stdint.h>
 
-int pow(int exp) {
+int powr(int exp) {
 
     int res = 1;
     while(exp) {
@@ -12,11 +12,12 @@ int pow(int exp) {
 
     
 }
+
 int bitmap_get(void* bm, int ii) {
     int remainder = ii % 8; 
     int bytes = ii / 8;
     uint8_t val = *(uint8_t*)(bm + bytes);
-    return val & pow(remainder);
+    return val & powr(remainder);
 
 }
 
@@ -27,7 +28,7 @@ void bitmap_put(void* bm, int ii, int vv) {
     if(vv) 
         *val = *val | pow(remainder);
     else
-        *val = *val & pow(remainder);
+        *val = *val & powr(remainder);
 }
 
 
