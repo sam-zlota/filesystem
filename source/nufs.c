@@ -193,22 +193,22 @@ void
 nufs_init_ops(struct fuse_operations* ops)
 {
     memset(ops, 0, sizeof(struct fuse_operations));
-    ops->access   = nufs_access;
+    // ops->access   = nufs_access;
     ops->getattr  = nufs_getattr;
-    ops->readdir  = nufs_readdir;
+    // ops->readdir  = nufs_readdir;
     ops->mknod    = nufs_mknod;
     ops->mkdir    = nufs_mkdir;
-    ops->link     = nufs_link;
+    // ops->link     = nufs_link;
     ops->unlink   = nufs_unlink;
-    ops->rmdir    = nufs_rmdir;
-    ops->rename   = nufs_rename;
-    ops->chmod    = nufs_chmod;
-    ops->truncate = nufs_truncate;
+    // ops->rmdir    = nufs_rmdir;
+    // ops->rename   = nufs_rename;
+    // ops->chmod    = nufs_chmod;
+    // ops->truncate = nufs_truncate;
     ops->open	  = nufs_open;
     ops->read     = nufs_read;
     ops->write    = nufs_write;
-    ops->utimens  = nufs_utimens;
-    ops->ioctl    = nufs_ioctl;
+    // ops->utimens  = nufs_utimens;
+    // ops->ioctl    = nufs_ioctl;
 };
 
 struct fuse_operations nufs_ops;
