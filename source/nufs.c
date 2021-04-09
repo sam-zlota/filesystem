@@ -23,7 +23,11 @@
 
 int ROOT_PNUM = -1
 
-inode* get_root_inode();
+inode *get_root_inode() { 
+    //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
+    return (inode *)(get_inode_bitmap() + 32); 
+}
+
 // implementation for: man 2 access
 // Checks if a file exists.
 int
@@ -213,10 +217,6 @@ void nufs_init_ops(struct fuse_operations *ops) {
 
 struct fuse_operations nufs_ops;
 
-inode *get_root_inode() { 
-    //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
-    return (inode *)(get_inode_bitmap() + 32); 
-}
 
 void init_root() {
   void *inode_bitmap = get_inode_bitmap();
@@ -252,7 +252,7 @@ void init_root() {
   direntry *root_dirent = (direntry *)root_block;
 
 
-  strcpy(root_dirent->name, '/');
+  strcpy(root_dirent->name, "/");
   // first directory entry is itself, TODO:
   // name it "/" or "."
   root_dirent->inum = 0;
