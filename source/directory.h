@@ -6,13 +6,13 @@
 #define DIR_NAME 48
 
 // #include "slist.h"
-#include "pages.h"
 #include "inode.h"
+#include "pages.h"
 
 typedef struct dirent {
-    char name[DIR_NAME];
-    int  inum;
-    // char _reserved[12];
+  char name[DIR_NAME];
+  int inum;
+  // char _reserved[12];
 } dirent;
 
 void directory_init();
@@ -24,4 +24,3 @@ slist* directory_list(const char* path);
 void print_directory(inode* dd);
 
 #endif
-

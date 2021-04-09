@@ -6,11 +6,11 @@
 #include "pages.h"
 
 typedef struct inode {
-    int refs; // reference count
-    int mode; // permission & type
-    int size; // bytes
-    int ptrs[2]; // direct pointers
-    int iptr; // single indirect pointer
+  int refs;     // reference count
+  int mode;     // permission & type
+  int size;     // bytes
+  int ptrs[2];  // direct pointers
+  int iptr;     // single indirect pointer
 } inode;
 
 void print_inode(inode* node);
