@@ -23,10 +23,10 @@
 
 int ROOT_PNUM = -1
 
-struct inode* get_root_inode() { 
+void* get_root_inode() { 
     //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
     void* inode_bitmap_addr = (void *) get_inode_bitmap();
-    return (inode*)(inode_bitmap_addr + 32); 
+    return inode_bitmap_addr + 32; 
 }
 
 // implementation for: man 2 access
@@ -43,7 +43,7 @@ nufs_access(const char *path, int mask) {
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
 
-  inode *root_inode = get_root_inode();
+  inode *root_inode =  (inode*)get_root_inode();
   if (strcmp(path, "/") == 0) {
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
@@ -229,7 +229,7 @@ void init_root() {
   // set root inode to first address in inode array
   // ROOT_INODE = (inode*) (inode_bitmap + 32);
 
-  inode *root_inode = get_root_inode();
+  inode *root_inode = (inode*) get_root_inode();
   // initialize root inode
   root_inode->refs = 1;
   root_inode->mode = 040755;
