@@ -23,7 +23,7 @@
 
 int ROOT_PNUM = -1
 
-
+inode* get_root_inode();
 // implementation for: man 2 access
 // Checks if a file exists.
 int
@@ -244,13 +244,15 @@ void init_root() {
 
   //the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
-  //making sure the root inode points to the root data block
-  root_inode->ptrs[0] = root_block;
+  //making sure the root inode points to the root data block inum
+  
+  root_inode->ptrs[0] = 0;
 
   //storing first direntry in root dir, dir itself,
   direntry *root_dirent = (direntry *)root_block;
 
-  root_dirent->name = '/';
+
+  strcpy(root_dirent->name, '/');
   // first directory entry is itself, TODO:
   // name it "/" or "."
   root_dirent->inum = 0;
