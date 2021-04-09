@@ -24,8 +24,8 @@
 int ROOT_PNUM = -1
 
 
-    // implementation for: man 2 access
-    // Checks if a file exists.
+// implementation for: man 2 access
+// Checks if a file exists.
 int
 nufs_access(const char *path, int mask) {
   int rv = 0;
@@ -37,36 +37,39 @@ nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-  inode *root = get_root_inode();
+
+  inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
-    st->st_mode = root->mode;  // directory
-    st->st_size = root->size;
-    st->st_uid = getuid();
-  }
-
-  void *root_block = pages_get_page(ROOT_PNUM);
-  direntry *directory = (direntry *)root_block;
-  // only handling files in root directory
-  char *name = path[1];
-
-  direntry *desired_dirent = NULL;
-  while (directory) {
-    if (strcmp(name, directory->name) == 0) {
-      desired_dirent = directory;
-      break;
-    }
-  }
-  // bitmap_get(get_inode_bitmap(), desired_dirent
-  int desired_inum = desired_dirent->inum;
-
-  else if (strcmp(path, "/hello.txt") == 0) {
-    // st->st_mode = 0100644; // regular file
-    st->st_size = 6;
+    st->st_mode = root_inode->mode;  // directory
+    st->st_size = root_inode->size;
     st->st_uid = getuid();
   }
   else {
-    rv = -1;
-  }
+    void *root_block = pages_get_page(ROOT_PNUM);
+    direntry *directory = (direntry *)root_block;
+    // only handling files in root directory
+    // so we can just ignore first character "/" 
+    // and assume the rest is the filename
+    char *name = &path[1];
+
+
+    direntry *desired_dirent;
+    while (directory) {
+        if (strcmp(name, directory->name) == 0) {
+        desired_dirent = directory;
+        break;
+        }
+        directory = directory->next;
+    }
+    // bitmap_get(get_inode_bitmap(), desired_dirent
+    int desired_inum = desired_dirent->inum;
+    //pointer arithmetic
+    inode* desired_inode = root_inode + desired_inum;
+    st->st_mode = desired_inode->mode;  //  0100644; // regular file
+    st->st_size = desired_inode->size;
+    st->st_uid = getuid();
+}
+
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
          st->st_size);
   return rv;
@@ -210,12 +213,15 @@ void nufs_init_ops(struct fuse_operations *ops) {
 
 struct fuse_operations nufs_ops;
 
-inode *get_root_inode() { return (inode *)(get_inode_bitmap(); + 32); }
+inode *get_root_inode() { 
+    //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
+    return (inode *)(get_inode_bitmap() + 32); 
+}
 
 void init_root() {
   void *inode_bitmap = get_inode_bitmap();
   void *pages_bitmap = get_pages_bitmap();
-
+  assert(bitmap_get(pages_bitmap, 0) == 1);
   // mark first element in inode bitmap as full
   bitmap_put(inode_bitmap, 0, 1);
 
@@ -226,18 +232,22 @@ void init_root() {
   // initialize root inode
   root_inode->refs = 1;
   root_inode->mode = 040755;
-  root_inode->size = -1;  // TODO:
+  root_inode->size = -1;  // TODO:determine size of directory
 
-  // set root pnum to first entry,
+  // assign the page number of the root to first empty page
+  // after pages bitmap, inode bitmap and inode array:
   // size of pages bitmap 32 bytes (32*8 bits = 256 bits) plus
   // size of inode bitmap 32 bytes plus
   // size of inode array 256 * sizeof(inode)
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
 
+  //the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
+  //making sure the root inode points to the root data block
   root_inode->ptrs[0] = root_block;
 
+  //storing first direntry in root dir, dir itself,
   direntry *root_dirent = (direntry *)root_block;
 
   root_dirent->name = '/';
@@ -245,7 +255,9 @@ void init_root() {
   // name it "/" or "."
   root_dirent->inum = 0;
 }
-int main(int argc, char *argv[]) {
+
+int 
+main(int argc, char *argv[]) {
   assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
   char *path = argv[--argc];

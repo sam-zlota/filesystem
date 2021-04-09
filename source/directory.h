@@ -9,11 +9,12 @@
 #include "inode.h"
 #include "pages.h"
 
-typedef struct dirent {
+typedef struct direntry {
   char name[DIR_NAME];
   int inum;
   // char _reserved[12];
-} dirent;
+  direntry* next;
+} direntry;
 
 void directory_init();
 int directory_lookup(inode* dd, const char* name);
