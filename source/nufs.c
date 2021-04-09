@@ -48,32 +48,35 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
+    return rv;
   }
   else {
     void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *directory = (direntry *)root_block;
+    direntry *curr_direntry = (direntry *)root_block;
     // only handling files in root directory
     // so we can just ignore first character "/" 
     // and assume the rest is the filename
-    char *name;
-    strcpy(name, &path[1]);
+    char *desired_filename;
+    strcpy(desired_filename, &path[1]);
 
-
-    direntry *desired_dirent;
-    while (directory) {
-        if (strcmp(name, directory->name) == 0) {
-        desired_dirent = directory;
+    direntry *desired_direntry == NULL;
+    while (curr_direntry) {
+        if (strcmp(desired_filename, curr_direntry->name) == 0) {
+        desired_direntry = curr_direntry;
         break;
         }
-        directory = directory->next;
+        curr_direntry = curr_direntry->next;
     }
+    if(desired_direntry == NULL) 
+      return -ENOENT;
     // bitmap_get(get_inode_bitmap(), desired_dirent
-    int desired_inum = desired_dirent->inum;
+    int desired_inum = desired_direntry->inum;
     //pointer arithmetic
     inode* desired_inode = root_inode + desired_inum;
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
+    return rv;
 }
 
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
