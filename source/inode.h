@@ -14,7 +14,7 @@ typedef struct inode {
 } inode;
 
 void print_inode(inode* node);
-void* get_root_inode();
+inode* get_root_inode();
 inode* get_inode(int inum);
 int alloc_inode();
 void free_inode();
