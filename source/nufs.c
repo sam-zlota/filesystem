@@ -25,7 +25,8 @@ int ROOT_PNUM = -1
 
 inode* get_root_inode() { 
     //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
-    return (inode*)(get_inode_bitmap() + 32); 
+    void* inode_bitmap_addr = (void *) get_inode_bitmap();
+    return (inode*)(inode_bitmap_addr + 32); 
 }
 
 // implementation for: man 2 access
