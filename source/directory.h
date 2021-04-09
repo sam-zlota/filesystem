@@ -13,7 +13,7 @@ typedef struct direntry {
   char name[DIR_NAME];
   int inum;
   // char _reserved[12];
-  direntry* next;
+  struct direntry* next;
 } direntry;
 
 void directory_init();
@@ -21,7 +21,7 @@ int directory_lookup(inode* dd, const char* name);
 int tree_lookup(const char* path);
 int directory_put(inode* dd, const char* name, int inum);
 int directory_delete(inode* dd, const char* name);
-slist* directory_list(const char* path);
+// slist* directory_list(const char* path);
 void print_directory(inode* dd);
 
 #endif
