@@ -43,14 +43,34 @@ int
 nufs_getattr(const char *path, struct stat *st)
 {
     int rv = 0;
-
+    inode* root = get_root_inode();
     if (strcmp(path, "/") == 0) {
-        st->st_mode = 040755; // directory
-        st->st_size = 0;
+        st->st_mode = root->mode; // directory
+        st->st_size = root->size;
         st->st_uid = getuid();
     }
+
+    void* root_block = pages_get_page(ROOT_PNUM);
+    dirent* directory = (dirent*)root_block;
+    //only handling files in root directory
+    char* name = path[1];
+
+    dirent* desired_dirent = NULL;
+    while(directory) {
+        if (strcmp(name, directory->name) == 0) {
+            desired_dirent = directory;
+            break;
+        }
+    }
+    // bitmap_get(get_inode_bitmap(), desired_dirent
+    int desired_inum = desired_dirent->inum;
+
+
+
+
+
     else if (strcmp(path, "/hello.txt") == 0) {
-        st->st_mode = 0100644; // regular file
+        // st->st_mode = 0100644; // regular file
         st->st_size = 6;
         st->st_uid = getuid();
     }
