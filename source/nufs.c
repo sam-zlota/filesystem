@@ -55,7 +55,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     // only handling files in root directory
     // so we can just ignore first character "/" 
     // and assume the rest is the filename
-    char *name = &path[1];
+    char *name;
+    strcpy(name, &path[1]);
 
 
     direntry *desired_dirent;
@@ -229,7 +230,7 @@ void init_root() {
   // set root inode to first address in inode array
   // ROOT_INODE = (inode*) (inode_bitmap + 32);
 
-  inode *root_inode = (inode*) ();
+  inode *root_inode = get_root_inode();
   // initialize root inode
   root_inode->refs = 1;
   root_inode->mode = 040755;
