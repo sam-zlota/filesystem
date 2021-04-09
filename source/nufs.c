@@ -59,7 +59,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     char *desired_filename;
     strcpy(desired_filename, &path[1]);
 
-    direntry *desired_direntry == NULL;
+    direntry *desired_direntry = NULL;
     while (curr_direntry) {
         if (strcmp(desired_filename, curr_direntry->name) == 0) {
         desired_direntry = curr_direntry;
