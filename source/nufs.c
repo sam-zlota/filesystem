@@ -22,13 +22,12 @@
 #include "util.h"
 
 int ROOT_PNUM = -1
-                // inode* ROOT_INODE = -1;
-                // int
 
-                // implementation for: man 2 access
-                // Checks if a file exists.
-                int
-                nufs_access(const char *path, int mask) {
+
+    // implementation for: man 2 access
+    // Checks if a file exists.
+int
+nufs_access(const char *path, int mask) {
   int rv = 0;
   printf("access(%s, %04o) -> %d\n", path, mask, rv);
   return rv;
@@ -46,11 +45,11 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   void *root_block = pages_get_page(ROOT_PNUM);
-  dirent *directory = (dirent *)root_block;
+  direntry *directory = (direntry *)root_block;
   // only handling files in root directory
   char *name = path[1];
 
-  dirent *desired_dirent = NULL;
+  direntry *desired_dirent = NULL;
   while (directory) {
     if (strcmp(name, directory->name) == 0) {
       desired_dirent = directory;
@@ -239,7 +238,7 @@ void init_root() {
   void *root_block = pages_get_page(ROOT_PNUM);
   root_inode->ptrs[0] = root_block;
 
-  dirent *root_dirent = (dirent *)root_block;
+  direntry *root_dirent = (direntry *)root_block;
 
   root_dirent->name = '/';
   // first directory entry is itself, TODO:

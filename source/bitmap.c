@@ -1,5 +1,7 @@
 
 #include <stdint.h>
+#include <stdio.h>
+#include <assert.h>
 
 int mask(int rem) {
   assert(rem < 8);
