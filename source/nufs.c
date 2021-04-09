@@ -270,7 +270,11 @@ main(int argc, char *argv[]) {
   char *path = argv[--argc];
   pages_init(path);
   init_root();
-  // storage_init(argv[--argc]);
-  nufs_init_ops(&nufs_ops);
-  return fuse_main(argc, argv, &nufs_ops, NULL);
+  // // storage_init(argv[--argc]);
+  // nufs_init_ops(&nufs_ops);
+  // return fuse_main(argc, argv, &nufs_ops, NULL);
+  printf("inode bitmap:\n");
+  bitmap_print(get_inode_bitmap(), 256);
+  printf("pages bitmap\n");
+  bitmap_print(get_pages_bitmap(), 256);
 }
