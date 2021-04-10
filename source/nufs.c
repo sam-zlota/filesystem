@@ -25,6 +25,7 @@
 int ROOT_PNUM = -1;
 
 inode *get_root_inode() {
+  // first address in inode array
   // root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
   void *inode_bitmap_addr = (void *)get_inode_bitmap();
   return (inode *)inode_bitmap_addr + 32;
@@ -226,41 +227,61 @@ void nufs_init_ops(struct fuse_operations *ops) {
 struct fuse_operations nufs_ops;
 
 void init_root() {
+  /**
+   *
+   * |PAGE 0|
+   *      ---------------------------------
+   *     | Pages Bitmap (32 bytes, 256 bits)
+   *     | ---------------------------------
+   *     | Inode Bitmap (32 bytes, 256 bits)
+   *     | ---------------------------------
+   *     | Inode Array (256 * sizeof(inode))|
+   *      ---------------------------------
+   * |PAGE 1|
+   *      ---------------------------------
+   *     | Remainder of Inode Array
+   *      ---------------------------------
+   * |PAGE 2|
+   *      ---------------------------------
+   *     | ROOT DATA BLOCK
+   *      ---------------------------------
+   *
+   */
+
   void *inode_bitmap = get_inode_bitmap();
   void *pages_bitmap = get_pages_bitmap();
-  assert(bitmap_get(pages_bitmap, 0) == 1);
-  // mark first element in inode bitmap as full
-  bitmap_put(inode_bitmap, 0, 1);
 
-  // set root inode to first address in inode array
-  // ROOT_INODE = (inode*) (inode_bitmap + 32);
+  // mark second element in pages bitmap used for bitmaps and inode array
+  bitmap_put(pages_bitmap, 1, 1);
+
+  // mark first element in inode bitmap for root inode
+  bitmap_put(inode_bitmap, 0, 1);
 
   inode *root_inode = get_root_inode();
   // initialize root inode
   root_inode->refs = 1;
-  root_inode->mode = 040755;
-  root_inode->size = 10;  // TODO:determine size of directory
+  root_inode->mode = 040755;            // directory
+  root_inode->size = sizeof(direntry);  //
 
   // assign the page number of the root to first empty page
   // after pages bitmap, inode bitmap and inode array:
-  // size of pages bitmap 32 bytes (32*8 bits = 256 bits) plus
-  // size of inode bitmap 32 bytes plus
-  // size of inode array 256 * sizeof(inode)
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
-  printf("root page num: %ld\n", ROOT_PNUM);
+  printf("sizeof(inode) = %ld, sizeof(direntry) = %ld\n", sizeof(inode),
+         sizeof(direntry));
+  // we know ROOT_PNUM is 2, mark used
+  bitmap_put(pages_bitmap, ROOT_PNUM, 1);
+
   // the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
-  // making sure the root inode points to the root data block inum
 
-  root_inode->ptrs[0] = 0;
+  // making sure the root inode points to the root data block page num
+  root_inode->ptrs[0] = ROOT_PNUM;
 
-  // storing first direntry in root dir, dir itself,
+  // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-
   strcpy(root_dirent->name, ".");
-  // first directory entry is itself, TODO:
-  // name it "/" or "."
+  // root direntry coresponds to first inode
   root_dirent->inum = 0;
 }
 
