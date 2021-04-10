@@ -80,7 +80,8 @@ int nufs_getattr(const char *path, struct stat *st) {
 
     if (not_found) {
       printf("not found ERRRROOORRRR\n");
-      return -ENOENT;
+      // return -ENOENT;
+      return -1;
     }
 
     printf("trying to access ii direntry_arr, no segf\n");
