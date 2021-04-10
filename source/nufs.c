@@ -76,7 +76,7 @@ int nufs_getattr(const char *path, struct stat *st) {
         break;
       }
     }
-    printf("success traversed direntry_arr, no segf\n");
+    // printf("success traversed direntry_arr, no segf\n");
 
     if (not_found) return -ENOENT;
     direntry desired_direntry = direntry_arr[ii];
@@ -88,6 +88,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
+
+    printf("success traversed init inode, no segf\n");
     return rv;
   }
 
