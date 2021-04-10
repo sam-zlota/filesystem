@@ -270,7 +270,7 @@ main(int argc, char *argv[]) {
   char *path = argv[--argc];
   puts(path);
   pages_init(path);
-  init_root();
+  // init_root();
   // // storage_init(argv[--argc]);
   // nufs_init_ops(&nufs_ops);
   // return fuse_main(argc, argv, &nufs_ops, NULL);
