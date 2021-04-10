@@ -233,7 +233,7 @@ void init_root() {
   // initialize root inode
   root_inode->refs = 1;
   root_inode->mode = 040755;
-  root_inode->size = -1;  // TODO:determine size of directory
+  root_inode->size = 10;  // TODO:determine size of directory
 
   // assign the page number of the root to first empty page
   // after pages bitmap, inode bitmap and inode array:
