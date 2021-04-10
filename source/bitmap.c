@@ -27,12 +27,13 @@
 // rem 7 ==> 0000_0001 ==> 1
 static int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
+
 int bitmap_get(void *bm, int ii) {
   assert(ii < 256);
   int remainder = ii % 8;
   int bytes = ii / 8;
   uint8_t val = *(uint8_t *)(bm + bytes);
-  return val & mask[remainder];
+  return (val & mask[remainder]) >> remainder;
 }
 
 void bitmap_put(void *bm, int ii, int vv) {
