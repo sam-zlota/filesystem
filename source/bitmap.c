@@ -58,7 +58,7 @@ void bitmap_put(void *bm, int ii, int vv) {
   } 
   else {
     // printf("assinging value: %ld", *val & mask[remainder]);
-    *val = *val & mask[remainder];
+    *val = *val & mask[remainder] >> (7 - remainder);
   }
   // printf("val after: %ld\n", *val);
 
