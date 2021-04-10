@@ -28,13 +28,6 @@ int ROOT_PNUM = -1;
 static int MAX_DIRENTRIES = 64;  // TODO: change because changed size of
                                  // direntry
 
-inode *get_root_inode() {
-  // first address in inode array
-  // root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
-  void *inode_bitmap_addr = (void *)get_inode_bitmap();
-  return (inode *)inode_bitmap_addr + 32;
-}
-
 // implementation for: man 2 access
 // Checks if a file exists.
 int nufs_access(const char *path, int mask) {
