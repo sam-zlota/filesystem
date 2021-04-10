@@ -282,9 +282,11 @@ main(int argc, char *argv[]) {
   printf("pages bitmap\n");
   bitmap_print(pages_bm, 5);
 
-  printf("\ntesting put then remove\n\n");
+  printf("\ntesting put in each\n\n");
   bitmap_put(pages_bm, 0, 1);
-  bitmap_put(pages_bm, 0, 0);
+  bitmap_put(pages_bm, 1, 1);
+  bitmap_put(pages_bm, 2, 1);
+  bitmap_put(pages_bm, 3, 1);
 
   bitmap_print(pages_bm, 5);
 }
