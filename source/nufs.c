@@ -270,34 +270,14 @@ main(int argc, char *argv[]) {
   char *path = argv[--argc];
   puts(path);
   pages_init(path);
-  // init_root();
-  // // storage_init(argv[--argc]);
-  // nufs_init_ops(&nufs_ops);
-  // return fuse_main(argc, argv, &nufs_ops, NULL);
+  init_root();
+  // storage_init(argv[--argc]);
+  nufs_init_ops(&nufs_ops);
+  return fuse_main(argc, argv, &nufs_ops, NULL);
 
   
-  // printf("inode bitmap:\n");
-  // bitmap_print(get_inode_bitmap(), );
-  void* pages_bm = get_pages_bitmap();
-  printf("pages bitmap\n");
-  bitmap_print(pages_bm, 5);
 
-  printf("\ntesting put in each\n\n");
-  bitmap_put(pages_bm, 0, 1);
-  bitmap_put(pages_bm, 1, 1);
-  bitmap_put(pages_bm, 2, 1);
-  bitmap_put(pages_bm, 3, 1);
-
-  bitmap_print(pages_bm, 5);
-  printf("\ntesting remove at 2\n\n");
-  bitmap_put(pages_bm, 2, 0);
-  bitmap_print(pages_bm, 5);
-  printf("\ntesting put at at 120, 255\n\n");
-  bitmap_put(pages_bm, 120, 1);
-  bitmap_put(pages_bm, 255, 1);
-  bitmap_print(pages_bm, 256);
-  printf("\ntesting put at at 256\n\n");
-  bitmap_put(pages_bm, 256, 1);
+  
 
 
 
