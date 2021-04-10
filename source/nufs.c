@@ -83,7 +83,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     direntry desired_direntry = direntry_arr[ii];
 
     // bitmap_get(get_inode_bitmap(), desired_dirent
-    int desired_inum = desired_direntry.num;
+    int desired_inum = desired_direntry.inum;
     // pointer arithmetic
     inode *desired_inode = root_inode + desired_inum;
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
