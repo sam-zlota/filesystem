@@ -76,9 +76,10 @@ int nufs_getattr(const char *path, struct stat *st) {
         break;
       }
     }
-    // printf("success traversed direntry_arr, no segf\n");
+    printf("success traversed direntry_arr, no segf\n");
 
     if (not_found) return -ENOENT;
+    printf("trying to access ii direntry_arr, no segf\n");
     direntry desired_direntry = direntry_arr[ii];
 
     printf("trying to init inode, no segf\n");
