@@ -377,7 +377,7 @@ void init_root() {
   memset(root_block, 0, 4096);
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".");
+  strcpy(root_dirent->name, "/");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 }
