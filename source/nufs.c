@@ -53,7 +53,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     return rv;
   } else {
     void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *curr_direntry = (direntry *)root_block;
+    direntry curr_direntry = (direntry)root_block;
     // only handling files in root directory
     // so we can just ignore first character "/"
     // and assume the rest is the filename
@@ -61,20 +61,17 @@ int nufs_getattr(const char *path, struct stat *st) {
     strcpy(desired_filename, &path[1]);
     // assert(strcmp(desired_filename, "hello.txt") == 0);
 
-    direntry *desired_direntry = NULL;
-    int z = 0;
+    direntry desired_direntry = NULL;
     while (curr_direntry) {
-      z++;
-      if (strcmp(desired_filename, curr_direntry->name) == 0) {
+      if (strcmp(desired_filename, curr_direntry.name) == 0) {
         desired_direntry = curr_direntry;
         break;
       }
-      curr_direntry = curr_direntry->next;
+      curr_direntry = curr_direntry.next;
     }
-    // assert(z>1);
     if (desired_direntry == NULL) return -ENOENT;
     // bitmap_get(get_inode_bitmap(), desired_dirent
-    int desired_inum = desired_direntry->inum;
+    int desired_inum = desired_direntry.num;
     // pointer arithmetic
     inode *desired_inode = root_inode + desired_inum;
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
@@ -112,6 +109,19 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
+  char *desired_filename;
+  strcpy(desired_filename, &path[1]);
+  inode *root_inode = get_root_inode();
+  void *root_data = pages_get_pages(root_inode->iptr[0]);
+  direntry *curr_direntry = (direntry *)root_data;
+
+  //
+
+  // insert at end of root_dir
+  while (curr_direntry) {
+    if (curr_direntry->next == NULL) {
+    }
+  }
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
@@ -278,10 +288,10 @@ void init_root() {
   root_inode->ptrs[0] = ROOT_PNUM;
 
   // storing first direntry in root dir, itself,
-  direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".");
+  direntry root_dirent = (direntry)root_block;
+  strcpy(root_dirent.name, ".");
   // root direntry coresponds to first inode
-  root_dirent->inum = 0;
+  root_dirent.inum = 0;
 }
 
 int main(int argc, char *argv[]) {
