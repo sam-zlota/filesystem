@@ -268,6 +268,7 @@ main(int argc, char *argv[]) {
   // assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
   char *path = argv[--argc];
+  printf(path);
   pages_init(path);
   init_root();
   // // storage_init(argv[--argc]);
