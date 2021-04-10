@@ -135,9 +135,9 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         break;
       } else {
         // direntry must be initialized
-        rv = nufs_getattr(strcat(direntry_arr[ii].inum, "/"), &st);
+        rv = nufs_getattr(strcat(direntry_arr[ii].name, "/"), &st);
         assert(rv == 0);
-        filler(buf, strcat(direntry_arr[ii].inum, "/"), &st, 0);
+        filler(buf, strcat(direntry_arr[ii].name, "/"), &st, 0);
       }
     }
 
