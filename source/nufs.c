@@ -131,6 +131,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
+
+  printf("mknod successfully entered\n");
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
 
@@ -154,7 +156,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       return -EEXIST;
     }
   }
-  if (not_found) return -EDQUOT;  // directory space
+
+  // if (not_found) return -EDQUOT;  // directory space
 
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
