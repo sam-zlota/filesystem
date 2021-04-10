@@ -33,7 +33,7 @@ int bitmap_get(void *bm, int ii) {
   int remainder = ii % 8;
   int bytes = ii / 8;
   uint8_t val = *(uint8_t *)(bm + bytes);
-  if (val & mask[remainder]) {
+  if (val & mask[remainder] > 0) {
     return 1;
   }
   else
