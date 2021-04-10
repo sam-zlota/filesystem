@@ -295,7 +295,7 @@ main(int argc, char *argv[]) {
   printf("\ntesting put at at 120, 255\n\n");
   bitmap_put(pages_bm, 120, 1);
   bitmap_put(pages_bm, 255, 1);
-  bitmap_print(pages_bm, 5);
+  bitmap_print(pages_bm, 256);
   printf("\ntesting put at at 256\n\n");
   bitmap_put(pages_bm, 256, 1);
 
