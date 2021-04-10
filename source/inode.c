@@ -28,4 +28,4 @@ inode *get_root_inode() {
   return (inode *)(inode_bitmap_addr + 32);
 }
 
-inode *get_inode(int inum) { return get_root_inode + inum; }
+inode *get_inode(int inum) { return get_root_inode() + inum; }
