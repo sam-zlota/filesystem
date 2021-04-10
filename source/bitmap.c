@@ -50,10 +50,18 @@ void bitmap_put(void *bm, int ii, int vv) {
   int bytes = ii / 8;
   uint8_t *val = (uint8_t *)(bm + bytes);
   printf("putting val: %ld into index: %ld\n", vv, ii);
-  if (vv)
+  printf("val before: %ld\n", *val);
+
+  if (vv) {
+    printf("assinging value: %ld", *val | mask[remainder]);
     *val = *val | mask[remainder];
-  else
+  } 
+  else {
+    printf("assinging value: %ld", *val & mask[remainder]);
     *val = *val & mask[remainder];
+  }
+  printf("val after: %ld\n", *val);
+
 }
 
 void bitmap_print(void *bm, int size) {
