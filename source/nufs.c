@@ -41,7 +41,7 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-
+  memset(st, 0, sizeof(struct stat));
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
     st->st_mode = root_inode->mode;  // directory
@@ -259,7 +259,7 @@ void init_root() {
 }
 
 int main(int argc, char *argv[]) {
-  // assert(argc > 2 && argc < 6);
+  assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
   // char *path = argv[--argc];
   // puts(path);
