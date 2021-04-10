@@ -40,6 +40,8 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
+  printf("entered nufs_getattr\n");
+
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
   // printf("entered getattr, no segf\n");
@@ -154,6 +156,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
+  printf("entered mknod\n");
 
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
