@@ -125,15 +125,41 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   strcpy(desired_filename, &path[1]);
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(root_inode->ptrs[0]);
-  direntry *curr_direntry = (direntry *)root_data;
+  direntry *direntry_arr = (direntry *)root_data;
 
-  //
-
-  // insert at end of root_dir
-  while (curr_direntry) {
-    if (curr_direntry->next == NULL) {
+  int ii;
+  int not_found = 1;
+  // TODO: handle duplicates?
+  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    if (direntry_arr[ii].inum == 0) {
+      // 0 is reserved for root or uninitialzied, so we must have
+      // reached end of array, because array is contiguous and we
+      // are not searching for root
+      not_found = 0;
+      break;
     }
   }
+  if (not_found) return -ENOENT;
+  direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
+  int first_free_inum = get_first_free_inum();
+  if (first_free_inum == -1) {
+    return rv;
+  }
+  first_empty_direntry->inum = first_free_inum;
+  first_empty_direntry->name = desired_filename;
+  root_inode->size += sizeof(direntry);
+
+  inode *new_inode = get_inode(first_empty_direntry->inum);
+
+  new_inode->mode = mode_t;
+  new_inode->refs = 1;
+  new_inode->size = 0;
+  int first_free_pnum = get_first_free_pnum();
+  if (first_free_pnum == -1) {
+    return rv;
+  }
+  new_inode->ptrs[0] = first_free_pnum;
+
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
