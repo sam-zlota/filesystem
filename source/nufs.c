@@ -235,15 +235,15 @@ void init_root() {
    *     | ---------------------------------
    *     | Inode Bitmap (32 bytes, 256 bits)
    *     | ---------------------------------
-   *     | Inode Array (256 * sizeof(inode))|
+   *     | Beggining of Inode Array (4032 bytes = 168 * sizeof(inode))
    *      ---------------------------------
    * |PAGE 1|
    *      ---------------------------------
-   *     | Remainder of Inode Array
+   *     | Remainder of Inode Array (2112 bytes = 88 * sizeof(inode))
    *      ---------------------------------
    * |PAGE 2|
    *      ---------------------------------
-   *     | ROOT DATA BLOCK
+   *     | ROOT DATA BLOCK (linkedlist of direntry, max_len 64)
    *      ---------------------------------
    *
    */
@@ -267,8 +267,7 @@ void init_root() {
   // after pages bitmap, inode bitmap and inode array:
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
-  printf("sizeof(inode) = %ld, sizeof(direntry) = %ld\n", sizeof(inode),
-         sizeof(direntry));
+
   // we know ROOT_PNUM is 2, mark used
   bitmap_put(pages_bitmap, ROOT_PNUM, 1);
 
