@@ -41,9 +41,9 @@ int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
-  printf("entered getattr, no segf\n");
+  // printf("entered getattr, no segf\n");
   if (strcmp(path, "/") == 0) {
-    printf("entered getattr if, no segf\n");
+    // printf("entered getattr if, no segf\n");
 
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
@@ -76,6 +76,8 @@ int nufs_getattr(const char *path, struct stat *st) {
         break;
       }
     }
+    printf("success traversed direntry_arr, no segf\n");
+
     if (not_found) return -ENOENT;
     direntry desired_direntry = direntry_arr[ii];
 
