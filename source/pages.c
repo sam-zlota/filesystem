@@ -1,20 +1,20 @@
 // based on cs3650 starter code
 
 #define _GNU_SOURCE
-#include <string.h>
+#include "pages.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "bitmap.h"
-#include "pages.h"
 #include "util.h"
 
 const int PAGE_COUNT = 256;
@@ -25,7 +25,7 @@ static void *pages_base = 0;
 
 void pages_init(const char *path) {
   pages_fd = open(path, O_CREAT | O_RDWR, 0644);
-  if(pages_fd == -1)
+  if (pages_fd == -1)
     printf("Oh dear, something went wrong with open()! %s\n", strerror(errno));
   assert(pages_fd != -1);
 
