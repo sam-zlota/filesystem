@@ -280,10 +280,10 @@ main(int argc, char *argv[]) {
   // bitmap_print(get_inode_bitmap(), );
   void* pages_bm = get_pages_bitmap();
   printf("pages bitmap\n");
-  bitmap_print(pages_bm(), 5);
+  bitmap_print(pages_bm, 5);
 
   bitmap_put(pages_bm, 0, 1);
   bitmap_put(pages_bm, 0, 1);
 
-  bitmap_print(pages_bm(), 5);
+  bitmap_print(pages_bm, 5);
 }
