@@ -121,7 +121,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi) {
   struct stat st;
   int rv;
-  printf("called readdir/n");
+  printf("called readdir\n");
   inode *root_inode = get_root_inode();
 
   if (strcmp(path, "/") == 0) {
