@@ -124,7 +124,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
   inode *root_inode = get_root_inode();
-  void *root_data = pages_get_page(root_inode->iptr[0]);
+  void *root_data = pages_get_page(root_inode->ptrs[0]);
   direntry *curr_direntry = (direntry *)root_data;
 
   //
