@@ -155,14 +155,13 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       return -EEXIST;
     }
   }
-  printf("mknod successfully found next\n");
-  assert(ii == 1);
 
   // if (not_found) return -EDQUOT;  // directory space
 
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
   if (first_free_inum == -1) {
+    printf("error in inum/n");
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
@@ -176,10 +175,13 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->size = 0;
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
+    printf("error in pnum/n");
+
     return rv;
   }
   new_inode->ptrs[0] = first_free_pnum;
   rv = 0;
+  printf("mknod successfully made\n");
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
