@@ -25,8 +25,8 @@ static void *pages_base = 0;
 
 void pages_init(const char *path) {
   pages_fd = open(path, O_CREAT | O_RDWR, 0644);
-  if (pages_fd == -1)
-    printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
+  if(pages_fd == -1)
+    printf("Oh dear, something went wrong with open()! %s\n", strerror(errno));
   assert(pages_fd != -1);
 
   int rv = ftruncate(pages_fd, NUFS_SIZE);

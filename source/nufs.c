@@ -261,9 +261,9 @@ void init_root() {
 int main(int argc, char *argv[]) {
   // assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
-  char *path = argv[--argc];
-  puts(path);
-  pages_init(path);
+  // char *path = argv[--argc];
+  // puts(path);
+  pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
