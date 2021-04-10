@@ -44,7 +44,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
   
-  if (strcmp(path, ".") == 0) {
+  if (strcmp(path, "/") == 0) {
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
