@@ -41,13 +41,17 @@ int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
-
+  printf("entered getattr, no segf\n");
   if (strcmp(path, "/") == 0) {
+    printf("entered getattr if, no segf\n");
+
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
     return rv;
   } else {
+    printf("entered getattr else, no segf\n");
+
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
     // only handling files in root directory
