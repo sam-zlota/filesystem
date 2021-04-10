@@ -292,6 +292,15 @@ main(int argc, char *argv[]) {
   printf("\ntesting remove at 2\n\n");
   bitmap_put(pages_bm, 2, 0);
   bitmap_print(pages_bm, 5);
+  printf("\ntesting put at at 120, 255\n\n");
+  bitmap_put(pages_bm, 120, 1);
+  bitmap_put(pages_bm, 255, 1);
+  bitmap_print(pages_bm, 5);
+  printf("\ntesting put at at 256\n\n");
+  bitmap_put(pages_bm, 256, 1);
+
+
+
 
 
 }
