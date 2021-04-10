@@ -30,37 +30,41 @@ static int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
 int bitmap_get(void *bm, int ii) {
   assert(ii < 256);
-  int remainder = ii % 8;
-  int bytes = ii / 8;
-  uint8_t val = *(uint8_t *)(bm + bytes);
+  // int remainder = ii % 8;
+  // int bytes = ii / 8;
+  uint8_t* bitmap = (uint8_t *)bm;
   // printf("got val: %ld from index: %ld\n", (val & mask[remainder]) , ii);
 
-  if ((val & mask[remainder]) > 0) {
-    return 1;
-  }
-  else
-    return 0;
+  return ((bitmap[ii/8]) >> (7 - (ii%8)) & 1);
+  // if ((val & mask[remainder]) > 0) {
+  //   return 1;
+  // }
+  // else
+  //   return 0;
   // return (val & mask[remainder]) >> remainder;
 }
 
 void bitmap_put(void *bm, int ii, int vv) {
   assert(ii < 256);
   assert(vv == 0 || vv == 1);
-  int remainder = ii % 8;
-  int bytes = ii / 8;
-  uint8_t *val = (uint8_t *)(bm + bytes);
+  // int remainder = ii % 8;
+  // int bytes = ii / 8;
+  uint8_t *bitmap = (uint8_t *)bm;
   // printf("putting val: %ld into index: %ld\n", vv, ii);
   // printf("val before: %ld\n", *val >> (7 - remainder));
 
-  if (vv) {
-    // printf("assinging value: %ld", *val | mask[remainder] >> (7 - remainder));
-    *val = *val | mask[remainder] >> (7 - remainder);
-  } 
-  else {
-    // printf("assinging value: %ld", *val & mask[remainder]);
-    *val = *val & mask[remainder] >> (7 - remainder);
-  }
-  // printf("val after: %ld\n", *val);
+  if(vv != bitmap_get(bm, ii) == 0) 
+    bitmap[ii/8] |= 1 << (7 - (ii%8));
+  
+  // if (vv ) {
+  //   // printf("assinging value: %ld", *val | mask[remainder] >> (7 - remainder));
+  //   *val = *val | mask[remainder] << (7 - remainder);
+  // } 
+  // // else {
+  // //   // printf("assinging value: %ld", *val & mask[remainder]);
+  // //   *val = *val & mask[remainder] << (7 - remainder);
+  // // }
+  // // printf("val after: %ld\n", *val);
 
 }
 
