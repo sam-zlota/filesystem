@@ -54,7 +54,7 @@ void bitmap_put(void *bm, int ii, int vv) {
   // printf("val before: %ld\n", *val >> (7 - remainder));
 
   if(vv != bitmap_get(bm, ii)) 
-    bitmap[ii/8] |= 1 << (7 - (ii%8));
+    bitmap[ii/8] ^= 1 << (7 - (ii%8));
   
   // if (vv ) {
   //   // printf("assinging value: %ld", *val | mask[remainder] >> (7 - remainder));
