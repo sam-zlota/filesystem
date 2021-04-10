@@ -74,11 +74,11 @@ int nufs_getattr(const char *path, struct stat *st) {
   //   st->st_size = desired_inode->size;
   //   st->st_uid = getuid();
   //   return rv;
-  }
+  // }
 
-  printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
-         st->st_size);
-  return rv;
+  // printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
+  //        st->st_size);
+  // return rv;
 }
 
 // implementation for: man 2 readdir
