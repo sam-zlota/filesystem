@@ -56,7 +56,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // and assume the rest is the filename
     char *desired_filename;
     strcpy(desired_filename, &path[1]);
-    assert(strcmp(desired_filename, "hello.txt") == 0);
+    assert(strcmp(desired_filename, "hello.tx") == 0);
 
     direntry *desired_direntry = NULL;
     while (curr_direntry) {
