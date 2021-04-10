@@ -114,14 +114,75 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct stat st;
   int rv;
 
-  rv = nufs_getattr("/", &st);
-  assert(rv == 0);
-
-  filler(buf, ".", &st, 0);
-
   // rv = nufs_getattr("/hello.txt", &st);
   // assert(rv == 0);
   // filler(buf, "hello.txt", &st, 0);
+
+  inode *root_inode = get_root_inode();
+  // printf("entered getattr, no segf\n");
+  if (strcmp(path, "/") == 0) {
+    // printf("entered getattr if, no segf\n");
+
+    rv = nufs_getattr("/", &st);
+    assert(rv == 0);
+
+    filler(buf, ".", &st, 0);
+    return rv;
+  } else {
+    // printf("entered getattr else, no segf\n");
+
+    void *root_block = pages_get_page(ROOT_PNUM);
+    direntry *direntry_arr = (direntry *)root_block;
+    // only handling files in root directory
+    // so we can just ignore first character "/"
+    // and assume the rest is the filename
+    char *desired_filename;
+    strcpy(desired_filename, &path[1]);
+
+    // iterate over direntry_arr
+    int ii;
+    int not_found = 1;
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (direntry_arr[ii].inum == 0) {
+        // 0 is reserved for root or uninitialzied, so we must have
+        // reached end of array, because array is contiguous and we
+        // are not searching for root
+        break;
+      }
+      if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+        // desired dir entry is at index ii
+        not_found = 0;
+        break;
+      }
+    }
+    // printf("success traversed direntry_arr, no segf\n");
+
+    if (not_found) {
+      // printf("not found ERRRROOORRRR\n");
+      // dummy values
+      return nufs_mknod(path, 0100644, 0);
+    }
+
+    // printf("trying to access ii direntry_arr, no segf\n");
+    direntry desired_direntry = direntry_arr[ii];
+
+    // printf("trying to init inode, no segf\n");
+
+    // bitmap_get(get_inode_bitmap(), desired_dirent
+    int desired_inum = desired_direntry.inum;
+    // pointer arithmetic
+    inode *desired_inode = root_inode + desired_inum;
+    st->st_mode = desired_inode->mode;  //  0100644; // regular file
+    st->st_size = desired_inode->size;
+    st->st_uid = getuid();
+
+    // printf("success traversed init inode, no segf\n");
+    return rv;
+  }
+
+  printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
+         st->st_size);
+  return rv;
 
   printf("readdir(%s) -> %d\n", path, rv);
   return 0;
