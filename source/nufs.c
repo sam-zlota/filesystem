@@ -78,7 +78,11 @@ int nufs_getattr(const char *path, struct stat *st) {
     }
     printf("success traversed direntry_arr, no segf\n");
 
-    if (not_found) return -ENOENT;
+    if (not_found) {
+      printf("not found ERRRROOORRRR\n");
+      return -ENOENT;
+    }
+
     printf("trying to access ii direntry_arr, no segf\n");
     direntry desired_direntry = direntry_arr[ii];
 
