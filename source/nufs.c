@@ -127,7 +127,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   if (strcmp(path, "/") == 0) {
     rv = nufs_getattr("/", &st);
     assert(rv == 0);
-    filler(buf, ".", &st, 0);
+    filler(buf, "/", &st, 0);
 
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
