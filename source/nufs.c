@@ -24,9 +24,8 @@
 
 int ROOT_PNUM = -1;
 // a directory cannot have more than 64 entries
-// 64*sizeof(direntry) = 64*64 = 4096
-static int MAX_DIRENTRIES = 64;  // TODO: change because changed size of
-                                 // direntry
+// 78*sizeof(direntry) = 78*52 ~ 4096
+static int MAX_DIRENTRIES = 78;
 
 // implementation for: man 2 access
 // Checks if a file exists.
@@ -339,7 +338,6 @@ int main(int argc, char *argv[]) {
   // puts(path);
   pages_init(argv[--argc]);
   init_root();
-  printf("sizeof(direntry) = %ld\n", sizeof(direntry));
   // storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
   return fuse_main(argc, argv, &nufs_ops, NULL);
