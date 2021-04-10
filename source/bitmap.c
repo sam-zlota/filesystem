@@ -33,7 +33,12 @@ int bitmap_get(void *bm, int ii) {
   int remainder = ii % 8;
   int bytes = ii / 8;
   uint8_t val = *(uint8_t *)(bm + bytes);
-  return (val & mask[remainder]) >> remainder;
+  if (val & mask[remainder]) {
+    return 1;
+  }
+  else
+    return 0;
+  // return (val & mask[remainder]) >> remainder;
 }
 
 void bitmap_put(void *bm, int ii, int vv) {
