@@ -153,7 +153,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
-  first_empty_direntry->name = desired_filename;
+  strcpy(first_empty_direntry->name, desired_filename);
   root_inode->size += sizeof(direntry);
 
   inode *new_inode = get_inode(first_empty_direntry->inum);
