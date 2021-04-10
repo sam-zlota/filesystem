@@ -289,4 +289,9 @@ main(int argc, char *argv[]) {
   bitmap_put(pages_bm, 3, 1);
 
   bitmap_print(pages_bm, 5);
+  printf("\ntesting remove at 2\n\n");
+  bitmap_put(pages_bm, 2, 0);
+  bitmap_print(pages_bm, 5);
+
+
 }
