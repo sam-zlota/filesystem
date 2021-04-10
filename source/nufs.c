@@ -132,7 +132,6 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
 
-  printf("mknod successfully entered\n");
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
 
@@ -156,6 +155,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       return -EEXIST;
     }
   }
+  printf("mknod successfully found next\n");
+  assert(ii == 1);
 
   // if (not_found) return -EDQUOT;  // directory space
 
