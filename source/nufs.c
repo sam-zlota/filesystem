@@ -76,18 +76,20 @@ int nufs_getattr(const char *path, struct stat *st) {
         break;
       }
     }
-    printf("success traversed direntry_arr, no segf\n");
+    // printf("success traversed direntry_arr, no segf\n");
 
     if (not_found) {
-      printf("not found ERRRROOORRRR\n");
+      // printf("not found ERRRROOORRRR\n");
       // return -ENOENT;
-      return -1;
+
+      return nufs_mknod(path, mode, -1);
+      ;
     }
 
-    printf("trying to access ii direntry_arr, no segf\n");
+    // printf("trying to access ii direntry_arr, no segf\n");
     direntry desired_direntry = direntry_arr[ii];
 
-    printf("trying to init inode, no segf\n");
+    // printf("trying to init inode, no segf\n");
 
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry.inum;
@@ -97,7 +99,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
 
-    printf("success traversed init inode, no segf\n");
+    // printf("success traversed init inode, no segf\n");
     return rv;
   }
 
