@@ -69,7 +69,7 @@ int nufs_getattr(const char *path, struct stat *st) {
       }
       curr_direntry = curr_direntry->next;
     }
-    assert(z>1);
+    // assert(z>1);
     if (desired_direntry == NULL) return -ENOENT;
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry->inum;
