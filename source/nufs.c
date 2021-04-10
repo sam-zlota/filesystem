@@ -99,9 +99,9 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   filler(buf, ".", &st, 0);
 
-  rv = nufs_getattr("/hello.txt", &st);
-  assert(rv == 0);
-  filler(buf, "hello.txt", &st, 0);
+  // rv = nufs_getattr("/hello.txt", &st);
+  // assert(rv == 0);
+  // filler(buf, "hello.txt", &st, 0);
 
   printf("readdir(%s) -> %d\n", path, rv);
   return 0;
