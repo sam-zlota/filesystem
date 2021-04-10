@@ -82,7 +82,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     if (not_found) {
       // printf("not found ERRRROOORRRR\n");
       // dummy values
-      return nufs_mknod(path, -1, -1);
+      return nufs_mknod(path, 0100644, -1);
     }
 
     // printf("trying to access ii direntry_arr, no segf\n");
@@ -161,7 +161,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
   if (first_free_inum == -1) {
-    printf("error in inum/n");
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
@@ -175,13 +174,10 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->size = 0;
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
-    printf("error in pnum/n");
-
     return rv;
   }
   new_inode->ptrs[0] = first_free_pnum;
   rv = 0;
-  printf("mknod successfully made\n");
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
