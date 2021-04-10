@@ -248,7 +248,7 @@ void init_root() {
   // size of inode array 256 * sizeof(inode)
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
-
+  printf("root page num: %ld\n", ROOT_PNUM);
   // the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
   // making sure the root inode points to the root data block inum
