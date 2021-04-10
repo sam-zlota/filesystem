@@ -23,6 +23,9 @@
 #include "util.h"
 
 int ROOT_PNUM = -1;
+// a directory cannot have more than 64 entries
+// 64*sizeof(direntry) = 64*64 = 4096
+static int MAX_DIRENTRIES = 64;
 
 inode *get_root_inode() {
   // first address in inode array
@@ -53,23 +56,32 @@ int nufs_getattr(const char *path, struct stat *st) {
     return rv;
   } else {
     void *root_block = pages_get_page(ROOT_PNUM);
-    direntry curr_direntry = (direntry)root_block;
+    direntry *direntry_arr = (direntry *)root_block;
     // only handling files in root directory
     // so we can just ignore first character "/"
     // and assume the rest is the filename
     char *desired_filename;
     strcpy(desired_filename, &path[1]);
-    // assert(strcmp(desired_filename, "hello.txt") == 0);
 
-    direntry desired_direntry = NULL;
-    while (curr_direntry) {
-      if (strcmp(desired_filename, curr_direntry.name) == 0) {
-        desired_direntry = curr_direntry;
+    // iterate over direntry_arr
+    int ii;
+    int not_found = 1;
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (direntry_arr[ii].inum == 0) {
+        // 0 is reserved for root or uninitialzied, so we must have
+        // reached end of array, because array is contiguous and we
+        // are not searching for root
         break;
       }
-      curr_direntry = curr_direntry.next;
+      if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+        // desired dir entry is at index ii
+        not_found = 0;
+        break;
+      }
     }
-    if (desired_direntry == NULL) return -ENOENT;
+    if (not_found) return -ENOENT;
+    direntry desired_direntry = direntry_arr[ii];
+
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry.num;
     // pointer arithmetic
@@ -253,7 +265,7 @@ void init_root() {
    *      ---------------------------------
    * |PAGE 2|
    *      ---------------------------------
-   *     | ROOT DATA BLOCK (linkedlist of direntry, max_len 64)
+   *     | ROOT DATA BLOCK (array of direntry, max_len 64)
    *      ---------------------------------
    *
    */
@@ -286,12 +298,12 @@ void init_root() {
 
   // making sure the root inode points to the root data block page num
   root_inode->ptrs[0] = ROOT_PNUM;
-
+  memset(root_block, 0, 4096);
   // storing first direntry in root dir, itself,
-  direntry root_dirent = (direntry)root_block;
-  strcpy(root_dirent.name, ".");
+  direntry *root_dirent = (direntry *)root_block;
+  strcpy(root_dirent->name, ".");
   // root direntry coresponds to first inode
-  root_dirent.inum = 0;
+  root_dirent->inum = 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -301,6 +313,7 @@ int main(int argc, char *argv[]) {
   // puts(path);
   pages_init(argv[--argc]);
   init_root();
+  printf("sizeof(direntry) = %ld\n", sizeof(direntry));
   // storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
   return fuse_main(argc, argv, &nufs_ops, NULL);

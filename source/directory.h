@@ -13,7 +13,7 @@ typedef struct direntry {
   char name[DIR_NAME];
   int inum;
   // char _reserved[12];
-  struct direntry* next;
+  // struct direntry* next;
 } direntry;
 
 void directory_init();
