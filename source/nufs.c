@@ -253,7 +253,7 @@ void init_root() {
   // storing first direntry in root dir, dir itself,
   direntry *root_dirent = (direntry *)root_block;
 
-  strcpy(root_dirent->name, "/");
+  strcpy(root_dirent->name, ".");
   // first directory entry is itself, TODO:
   // name it "/" or "."
   root_dirent->inum = 0;
