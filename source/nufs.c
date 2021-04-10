@@ -25,7 +25,8 @@
 int ROOT_PNUM = -1;
 // a directory cannot have more than 64 entries
 // 64*sizeof(direntry) = 64*64 = 4096
-static int MAX_DIRENTRIES = 64;
+static int MAX_DIRENTRIES = 64;  // TODO: change because changed size of
+                                 // direntry
 
 inode *get_root_inode() {
   // first address in inode array
@@ -123,6 +124,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
+
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(root_inode->ptrs[0]);
   direntry *direntry_arr = (direntry *)root_data;
@@ -138,10 +140,15 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       not_found = 0;
       break;
     }
+    if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+      // desired dir entry is at index ii
+      return -EEXIST;
+    }
   }
-  if (not_found) return -ENOENT;
+  if (not_found) return -EDQUOT;  // directory space
+
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
-  int first_free_inum = get_first_free_inum();
+  int first_free_inum = alloc_inum();
   if (first_free_inum == -1) {
     return rv;
   }
@@ -154,12 +161,12 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->mode = mode_t;
   new_inode->refs = 1;
   new_inode->size = 0;
-  int first_free_pnum = get_first_free_pnum();
+  int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
     return rv;
   }
   new_inode->ptrs[0] = first_free_pnum;
-
+  rv = 0;
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }

@@ -60,7 +60,21 @@ int alloc_page() {
   for (int ii = 1; ii < PAGE_COUNT; ++ii) {
     if (!bitmap_get(pbm, ii)) {
       bitmap_put(pbm, ii, 1);
-      printf("+ alloc_page() -> %d\n", ii);
+      // printf("+ alloc_page() -> %d\n", ii);
+      return ii;
+    }
+  }
+
+  return -1;
+}
+
+int alloc_inum() {
+  void *ibm = get_inode_bitmap();
+
+  for (int ii = 1; ii < PAGE_COUNT; ++ii) {
+    if (!bitmap_get(ibm, ii)) {
+      bitmap_put(ibm, ii, 1);
+      // printf("+ alloc_page() -> %d\n", ii);
       return ii;
     }
   }
