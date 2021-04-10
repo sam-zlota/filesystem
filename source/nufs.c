@@ -274,8 +274,16 @@ main(int argc, char *argv[]) {
   // // storage_init(argv[--argc]);
   // nufs_init_ops(&nufs_ops);
   // return fuse_main(argc, argv, &nufs_ops, NULL);
-  printf("inode bitmap:\n");
-  bitmap_print(get_inode_bitmap(), 10);
+
+  
+  // printf("inode bitmap:\n");
+  // bitmap_print(get_inode_bitmap(), );
+  void* pages_bm = get_pages_bitmap();
   printf("pages bitmap\n");
-  bitmap_print(get_pages_bitmap(), 10);
+  bitmap_print(pages_bm(), 5);
+
+  bitmap_put(pages_bm, 0, 1);
+  bitmap_put(pages_bm, 0, 1);
+
+  bitmap_print(pages_bm(), 5);
 }
