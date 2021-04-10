@@ -1,7 +1,7 @@
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
 
 // int mask(int rem) {
 //   assert(rem < 8);
@@ -19,7 +19,6 @@
 //   return res;
 // }
 
-
 // rem, 0 ==> 1000_0000 ==> 128
 // rem, 1 ==> 0100_0000 ==> 64
 // ...
@@ -27,14 +26,12 @@
 // rem 7 ==> 0000_0001 ==> 1
 static int mask[8] = {128, 64, 32, 16, 8, 4, 2, 1};
 
-
 int bitmap_get(void *bm, int ii) {
   assert(ii < 256);
 
-  uint8_t* bitmap = (uint8_t *)bm;
+  uint8_t *bitmap = (uint8_t *)bm;
 
-  return ((bitmap[ii/8]) >> (7 - (ii%8)) & 1);
-
+  return ((bitmap[ii / 8]) >> (7 - (ii % 8)) & 1);
 }
 
 void bitmap_put(void *bm, int ii, int vv) {
@@ -42,12 +39,8 @@ void bitmap_put(void *bm, int ii, int vv) {
   assert(vv == 0 || vv == 1);
 
   uint8_t *bitmap = (uint8_t *)bm;
- 
 
-  if(vv != bitmap_get(bm, ii)) 
-    bitmap[ii/8] ^= 1 << (7 - (ii%8));
-
-
+  if (vv != bitmap_get(bm, ii)) bitmap[ii / 8] ^= 1 << (7 - (ii % 8));
 }
 
 void bitmap_print(void *bm, int size) {

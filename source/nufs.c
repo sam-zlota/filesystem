@@ -23,16 +23,15 @@
 
 int ROOT_PNUM = -1;
 
-inode* get_root_inode() { 
-    //root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
-    void* inode_bitmap_addr = (void *) get_inode_bitmap();
-    return (inode*) inode_bitmap_addr + 32; 
+inode *get_root_inode() {
+  // root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
+  void *inode_bitmap_addr = (void *)get_inode_bitmap();
+  return (inode *)inode_bitmap_addr + 32;
 }
 
 // implementation for: man 2 access
 // Checks if a file exists.
-int
-nufs_access(const char *path, int mask) {
+int nufs_access(const char *path, int mask) {
   int rv = 0;
   printf("access(%s, %04o) -> %d\n", path, mask, rv);
   return rv;
@@ -43,41 +42,39 @@ nufs_access(const char *path, int mask) {
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
 
-  inode *root_inode =  get_root_inode();
+  inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
     return rv;
-  }
-  else {
+  } else {
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *curr_direntry = (direntry *)root_block;
     // only handling files in root directory
-    // so we can just ignore first character "/" 
+    // so we can just ignore first character "/"
     // and assume the rest is the filename
     char *desired_filename;
     strcpy(desired_filename, &path[1]);
 
     direntry *desired_direntry = NULL;
     while (curr_direntry) {
-        if (strcmp(desired_filename, curr_direntry->name) == 0) {
+      if (strcmp(desired_filename, curr_direntry->name) == 0) {
         desired_direntry = curr_direntry;
         break;
-        }
-        curr_direntry = curr_direntry->next;
+      }
+      curr_direntry = curr_direntry->next;
     }
-    if(desired_direntry == NULL) 
-      return -ENOENT;
+    if (desired_direntry == NULL) return -ENOENT;
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry->inum;
-    //pointer arithmetic
-    inode* desired_inode = root_inode + desired_inum;
+    // pointer arithmetic
+    inode *desired_inode = root_inode + desired_inum;
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
     return rv;
-}
+  }
 
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
          st->st_size);
@@ -222,7 +219,6 @@ void nufs_init_ops(struct fuse_operations *ops) {
 
 struct fuse_operations nufs_ops;
 
-
 void init_root() {
   void *inode_bitmap = get_inode_bitmap();
   void *pages_bitmap = get_pages_bitmap();
@@ -247,15 +243,14 @@ void init_root() {
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
 
-  //the data block corresponding to the root
+  // the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
-  //making sure the root inode points to the root data block inum
-  
+  // making sure the root inode points to the root data block inum
+
   root_inode->ptrs[0] = 0;
 
-  //storing first direntry in root dir, dir itself,
+  // storing first direntry in root dir, dir itself,
   direntry *root_dirent = (direntry *)root_block;
-
 
   strcpy(root_dirent->name, "/");
   // first directory entry is itself, TODO:
@@ -263,8 +258,7 @@ void init_root() {
   root_dirent->inum = 0;
 }
 
-int 
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   // assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
   char *path = argv[--argc];
@@ -274,13 +268,4 @@ main(int argc, char *argv[]) {
   // storage_init(argv[--argc]);
   nufs_init_ops(&nufs_ops);
   return fuse_main(argc, argv, &nufs_ops, NULL);
-
-  
-
-  
-
-
-
-
-
 }
