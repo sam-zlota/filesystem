@@ -50,7 +50,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_uid = getuid();
     return rv;
   } else {
-    printf("entered getattr else, no segf\n");
+    // printf("entered getattr else, no segf\n");
 
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
@@ -80,6 +80,8 @@ int nufs_getattr(const char *path, struct stat *st) {
 
     if (not_found) return -ENOENT;
     direntry desired_direntry = direntry_arr[ii];
+
+    printf("trying to init inode, no segf\n");
 
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry.inum;
