@@ -25,7 +25,7 @@ inode *get_root_inode() {
   // first address in inode array
   // root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
   void *inode_bitmap_addr = (void *)get_inode_bitmap();
-  return (inode *)inode_bitmap_addr + 32;
+  return (inode *)(inode_bitmap_addr + 32);
 }
 
 inode *get_inode(int inum) { return get_root_inode + inum; }
