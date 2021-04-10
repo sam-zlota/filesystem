@@ -51,7 +51,10 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
-    return rv;
+    // printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv,
+    // st->st_mode,
+    //      st->st_size);
+    // return rv;
   } else {
     // printf("entered getattr else, no segf\n");
 
@@ -101,7 +104,10 @@ int nufs_getattr(const char *path, struct stat *st) {
     st->st_uid = getuid();
 
     // printf("success traversed init inode, no segf\n");
-    return rv;
+    // printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv,
+    // st->st_mode,
+    //      st->st_size);
+    // return rv;
   }
 
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
