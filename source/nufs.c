@@ -40,7 +40,7 @@ int nufs_access(const char *path, int mask) {
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
-  int rv = 0;
+          int rv = 0;
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
   
