@@ -82,7 +82,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     if (not_found) {
       // printf("not found ERRRROOORRRR\n");
       // dummy values
-      return nufs_mknod(path, 0100644, -1);
+      return nufs_mknod(path, 0100644, 0);
     }
 
     // printf("trying to access ii direntry_arr, no segf\n");
