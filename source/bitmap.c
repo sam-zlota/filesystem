@@ -33,6 +33,8 @@ int bitmap_get(void *bm, int ii) {
   int remainder = ii % 8;
   int bytes = ii / 8;
   uint8_t val = *(uint8_t *)(bm + bytes);
+  printf("got val: %ld from index: %ld\n", (val & mask[remainder]) , ii);
+
   if ((val & mask[remainder]) > 0) {
     return 1;
   }
@@ -47,6 +49,7 @@ void bitmap_put(void *bm, int ii, int vv) {
   int remainder = ii % 8;
   int bytes = ii / 8;
   uint8_t *val = (uint8_t *)(bm + bytes);
+  printf("putting val: %ld into index: %ld\n", vv, ii);
   if (vv)
     *val = *val | mask[remainder];
   else

@@ -275,7 +275,7 @@ main(int argc, char *argv[]) {
   // nufs_init_ops(&nufs_ops);
   // return fuse_main(argc, argv, &nufs_ops, NULL);
   printf("inode bitmap:\n");
-  bitmap_print(get_inode_bitmap(), 256);
+  bitmap_print(get_inode_bitmap(), 10);
   printf("pages bitmap\n");
-  bitmap_print(get_pages_bitmap(), 256);
+  bitmap_print(get_pages_bitmap(), 10);
 }
