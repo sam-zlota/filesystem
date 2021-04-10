@@ -50,7 +50,7 @@ void bitmap_put(void *bm, int ii, int vv) {
   int bytes = ii / 8;
   uint8_t *val = (uint8_t *)(bm + bytes);
   printf("putting val: %ld into index: %ld\n", vv, ii);
-  printf("val before: %ld\n", *val >> (7 - remainder);
+  printf("val before: %ld\n", *val >> (7 - remainder));
 
   if (vv) {
     printf("assinging value: %ld", *val | mask[remainder] >> (7 - remainder));
