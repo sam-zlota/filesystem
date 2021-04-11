@@ -389,19 +389,6 @@ void init_root() {
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 
-  /** ROOT DIR STRUCTURE
-   *  
-   *  PAGE BOUNDARY
-   *  
-   * 
-   * 
-   * 
-   * 
-   * 
-   * /
-
-
-
   // root_inode->refs++;
   // root_dirent[1].inum = 0;
   // strcpy(root_dirent[1].name, ".");
