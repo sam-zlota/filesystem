@@ -140,7 +140,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       } else {
         // direntry must be initialized
         struct stat st;
-        rv = nufs_getattr(direntry_arr[ii].name), &st);
+        rv = nufs_getattr(direntry_arr[ii].name, &st);
         assert(rv == 0);
         filler(buf, direntry_arr[ii].name, &st, 0);
       }
