@@ -3,6 +3,7 @@
 #include "slist.h"
 
 #include <alloca.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
