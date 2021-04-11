@@ -142,12 +142,12 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       } else {
         // direntry must be initialized
         printf("HEREEEEE: %ld\n", ii);
-        struct stat st;
+        struct stat st2;
         rv = nufs_getattr(direntry_arr[ii].name, &st);
         assert(rv == 0);
         printf("NO SEG: %ld\n", ii);
 
-        filler(buf, direntry_arr[ii].name, &st, 0);
+        filler(buf, direntry_arr[ii].name, &st2, 0);
       }
     }
 
