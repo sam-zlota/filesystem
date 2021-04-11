@@ -56,7 +56,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     //      st->st_size);
     // return rv;
   } else {
-    printf("entered getattr else\n");
+    printf("entered getattr else, lookinf for path %s\n", path);
 
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
@@ -70,10 +70,12 @@ int nufs_getattr(const char *path, struct stat *st) {
     int ii;
     int not_found = 1;
     for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
+      printf("checking dirent[%ld]\n", ii);
       if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
         // are not searching for root
+
         break;
       }
       if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
