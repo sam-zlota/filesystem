@@ -56,7 +56,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     //      st->st_size);
     // return rv;
   } else {
-    // printf("entered getattr else, no segf\n");
+    printf("entered getattr else\n");
 
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
