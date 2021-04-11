@@ -69,8 +69,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
-      if (direntry_arr[ii].inum == 0) {
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
         // are not searching for root
@@ -135,8 +135,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
-      if (direntry_arr[ii].inum == 0) {
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
         // are not searching for root
@@ -175,8 +175,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int ii;
   int not_found = 1;
   // TODO: handle duplicates?
-  for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
-    if (direntry_arr[ii].inum == 0) {
+  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    if (ii > 1 && direntry_arr[ii].inum == 0) {
       // 0 is reserved for root or uninitialzied, so we must have
       // reached end of array, because array is contiguous and we
       // are not searching for root
