@@ -40,14 +40,14 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-  printf("entered getattr , lookinf for path %s\n", path);
+  // printf("entered getattr , lookinf for path %s\n", path);
 
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
   // printf("entered getattr, no segf\n");
-  if (strcmp(path, "/") == 0) {
+  if (strcmp(path, "/") == 0 ||) {
     // printf("entered getattr if, no segf\n");
-    printf("in if\n");
+    // printf("in if\n");
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
@@ -56,29 +56,17 @@ int nufs_getattr(const char *path, struct stat *st) {
     //      st->st_size);
     // return rv;
   } else {
-    printf("entered getattr else\n");
     void *root_block = pages_get_page(ROOT_PNUM);
-    printf("entered getattr else, part 1 no segf\n");
     direntry *direntry_arr = (direntry *)root_block;
-    printf("entered getattr else, part 2 no segf\n");
     // only handling files in root directory
     // so we can just ignore first character "/"
     // and assume the rest is the filename
-    char *desired_filename;
-    printf("entered getattr else, part 3 no segf\n");
-    printf("trying to copy %s\n", path);
-    assert(strlen(path) > 1);
-    printf("trying to copy %s\n", path[1]);
-
-    strcpy(desired_filename, &path[1]);
-
-    printf("entered getattr else, part 4 no segf\n");
-
+    char *desired_filename = s_split(path, '/')->data;
+    // strcpy(desired_filename, &path[1]);
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
     for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      printf("checking dirent[%ld]\n", ii);
       if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -88,12 +76,10 @@ int nufs_getattr(const char *path, struct stat *st) {
       }
       if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
         // desired dir entry is at index ii
-        printf("FOUND\n");
         not_found = 0;
         break;
       }
     }
-    printf("success traversed direntry_arr, no segf\n");
 
     if (not_found) {
       // dummy values
@@ -130,7 +116,6 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi) {
   struct stat st;
   int rv;
-  printf("called readdir\n");
   inode *root_inode = get_root_inode();
 
   if (strcmp(path, "/") == 0) {
@@ -172,7 +157,6 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
-  printf("entered mknod\n");
 
   char *desired_filename;
   strcpy(desired_filename, &path[1]);
@@ -194,7 +178,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     }
     if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
       // desired dir entry is at index ii
-      printf("-EEXIST\n");
 
       return -EEXIST;
     }
@@ -205,7 +188,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
   if (first_free_inum == -1) {
-    printf("free inum\n");
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
@@ -219,13 +201,10 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->size = 0;
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
-    printf("-free pnum\n");
-
     return rv;
   }
   new_inode->ptrs[0] = first_free_pnum;
   rv = 0;
-  printf("getattr good\n");
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
@@ -394,7 +373,7 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, "./");
+  strcpy(root_dirent->name, ".");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 
