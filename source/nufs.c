@@ -69,7 +69,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -135,7 +135,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -175,7 +175,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int ii;
   int not_found = 1;
   // TODO: handle duplicates?
-  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+  for (ii = 2; ii < MAX_DIRENTRIES; ii++) {
     if (direntry_arr[ii].inum == 0) {
       // 0 is reserved for root or uninitialzied, so we must have
       // reached end of array, because array is contiguous and we
@@ -384,9 +384,14 @@ void init_root() {
   memset(root_block, 0, 4096);
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".");
+  strcpy(root_dirent->name, "/");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
+
+  root_inode->refs++;
+  root_dirent[1].inum = 0;
+  strcpy(&root_dirent[1].name, ".");
+  // root_dirent[1].name = ".";
 }
 
 int main(int argc, char *argv[]) {
