@@ -129,7 +129,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     rv = nufs_getattr("/", &st);
     assert(rv == 0);
     filler(buf, "/", &st, 0);
-    // buf += strlen("/");
+    buf += strlen("/");
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
 
@@ -151,7 +151,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         printf("NO SEG: %ld\n", ii);
 
         filler(buf, direntry_arr[ii].name, &st2, 0);
-        // buf += strlen(&direntry_arr[ii]);
+        buf += strlen(&direntry_arr[ii]);
       }
     }
 
