@@ -151,7 +151,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         printf("NO SEG: %ld\n", ii);
 
         filler(buf, direntry_arr[ii].name, &st2, 0);
-        buf += strlen(direntry_arr[ii]);
+        buf += strlen(&direntry_arr[ii]);
       }
     }
 
@@ -389,10 +389,10 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".");
+  strcpy(root_dirent->name, ".\0");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
-  assert(strcmp(root_dirent->name, ".") == 0);
+  assert(strcmp(root_dirent->name, ".\0") == 0);
 
   // root_inode->refs++;
   // root_dirent[1].inum = 0;
