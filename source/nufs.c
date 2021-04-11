@@ -84,6 +84,7 @@ int nufs_getattr(const char *path, struct stat *st) {
 
     if (not_found) {
       // dummy values
+      printf("calling mknod\n");
       return nufs_mknod(path, 0100644, 0);
     }
 
@@ -147,6 +148,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   } else {
     // non root path given
+    printf("non root path given\n");
     return -1;
   }
 
@@ -179,7 +181,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     }
     if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
       // desired dir entry is at index ii
-
+      printf("-EEXISt/n");
       return -EEXIST;
     }
   }
@@ -189,6 +191,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
   if (first_free_inum == -1) {
+    printf("inum error\n");
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
@@ -202,6 +205,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->size = 0;
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
+    printf("pnum error\n");
+
     return rv;
   }
   new_inode->ptrs[0] = first_free_pnum;
