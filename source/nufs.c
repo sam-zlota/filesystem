@@ -134,7 +134,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     int ii;
     int not_found = 1;
     for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (ii > 1 && direntry_arr[ii].inum == 0) {
+      if (ii >= 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
         // are not searching for root
