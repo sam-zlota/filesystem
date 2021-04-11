@@ -390,7 +390,7 @@ void init_root() {
 
   root_inode->refs++;
   root_dirent[1].inum = 0;
-  strcpy(&root_dirent[1].name, ".");
+  strcpy(root_dirent[1].name, ".");
   // root_dirent[1].name = ".";
 }
 
