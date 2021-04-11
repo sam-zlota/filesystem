@@ -69,7 +69,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
       if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -135,7 +135,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
       if (ii > 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -175,7 +175,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int ii;
   int not_found = 1;
   // TODO: handle duplicates?
-  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+  for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
     if (ii > 1 && direntry_arr[ii].inum == 0) {
       // 0 is reserved for root or uninitialzied, so we must have
       // reached end of array, because array is contiguous and we
@@ -356,10 +356,10 @@ void init_root() {
   void *inode_bitmap = get_inode_bitmap();
   void *pages_bitmap = get_pages_bitmap();
 
-  // mark second element in pages bitmap used for bitmaps and inode array
+  // mark PAGE 1 in pages bitmap used for bitmaps and inode array
   bitmap_put(pages_bitmap, 1, 1);
 
-  // mark first element in inode bitmap for root inode
+  // mark INODE 0 in inode bitmap for root inode
   bitmap_put(inode_bitmap, 0, 1);
 
   inode *root_inode = get_root_inode();
@@ -378,19 +378,33 @@ void init_root() {
 
   // the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
+  memset(root_block, 0, 4096);
 
   // making sure the root inode points to the root data block page num
   root_inode->ptrs[0] = ROOT_PNUM;
-  memset(root_block, 0, 4096);
+
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, "/");
+  strcpy(root_dirent->name, ".");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 
-  root_inode->refs++;
-  root_dirent[1].inum = 0;
-  strcpy(root_dirent[1].name, ".");
+  /** ROOT DIR STRUCTURE
+   *  
+   *  PAGE BOUNDARY
+   *  
+   * 
+   * 
+   * 
+   * 
+   * 
+   * /
+
+
+
+  // root_inode->refs++;
+  // root_dirent[1].inum = 0;
+  // strcpy(root_dirent[1].name, ".");
   // root_dirent[1].name = ".";
 }
 
