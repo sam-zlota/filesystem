@@ -40,7 +40,7 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-  printf("entered nufs_getattr\n");
+  printf("entered getattr , lookinf for path %s\n", path);
 
   memset(st, 0, sizeof(stat));
   inode *root_inode = get_root_inode();
@@ -56,8 +56,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     //      st->st_size);
     // return rv;
   } else {
-    printf("entered getattr else, lookinf for path %s\n", path);
-
+    printf("entered getattr else\n");
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
     // only handling files in root directory
