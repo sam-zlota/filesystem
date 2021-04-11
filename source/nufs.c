@@ -83,7 +83,7 @@ int nufs_getattr(const char *path, struct stat *st) {
         break;
       }
     }
-    // printf("success traversed direntry_arr, no segf\n");
+    printf("success traversed direntry_arr, no segf\n");
 
     if (not_found) {
       // dummy values
