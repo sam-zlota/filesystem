@@ -200,7 +200,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
   inode *new_inode = get_inode(first_empty_direntry->inum);
 
-  new_inode->mode = mode;
+  new_inode->mode = 100644;
   new_inode->refs = 1;
   new_inode->size = 0;
   int first_free_pnum = alloc_page();
