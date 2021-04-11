@@ -141,7 +141,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         break;
       } else {
         // direntry must be initialized
-        printf("HEREEEEE/n");
+        printf("HEREEEEE: %ld/n", ii);
         struct stat st;
         rv = nufs_getattr(direntry_arr[ii].name, &st);
         assert(rv == 0);
