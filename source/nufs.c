@@ -20,6 +20,7 @@
 #include "bitmap.h"
 #include "directory.h"
 #include "pages.h"
+#include "slist.h"
 #include "util.h"
 
 int ROOT_PNUM = -1;
