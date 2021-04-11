@@ -47,7 +47,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   // printf("entered getattr, no segf\n");
   if (strcmp(path, "/") == 0) {
     // printf("entered getattr if, no segf\n");
-
+    printf("in if\n");
     st->st_mode = root_inode->mode;  // directory
     st->st_size = root_inode->size;
     st->st_uid = getuid();
