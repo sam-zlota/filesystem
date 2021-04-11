@@ -63,7 +63,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     // so we can just ignore first character "/"
     // and assume the rest is the filename
     printf("tryingt to split: %s file", path);
-    char *desired_filename = s_split(path, '/')->data;
+    slist *filenames = s_split(path, '/');
+    char *desired_filename = filenames->data;
     // strcpy(desired_filename, &path[1]);
     // iterate over direntry_arr
     int ii;
