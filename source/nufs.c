@@ -123,7 +123,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rv;
   printf("called readdir\n");
   inode *root_inode = get_root_inode();
-
+  assert((strcmp(path, "/") == 0));
   if (strcmp(path, "/") == 0) {
     rv = nufs_getattr("/", &st);
     assert(rv == 0);
