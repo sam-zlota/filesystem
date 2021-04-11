@@ -58,14 +58,17 @@ int nufs_getattr(const char *path, struct stat *st) {
   } else {
     printf("entered getattr else\n");
     void *root_block = pages_get_page(ROOT_PNUM);
+    printf("entered getattr else, part 1 no segf\n");
     direntry *direntry_arr = (direntry *)root_block;
+    printf("entered getattr else, part 2 no segf\n");
     // only handling files in root directory
     // so we can just ignore first character "/"
     // and assume the rest is the filename
     char *desired_filename;
+    printf("entered getattr else, part 3 no segf\n");
     strcpy(desired_filename, &path[1]);
 
-    printf("entered getattr else, part 1 no segf\n");
+    printf("entered getattr else, part 4 no segf\n");
 
     // iterate over direntry_arr
     int ii;
