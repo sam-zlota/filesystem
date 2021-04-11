@@ -30,6 +30,7 @@ void s_free(slist* xs) {
 
 slist* s_split(const char* text, char delim) {
   if (*text == 0) {
+    assert(1 == -1);
     return 0;
   }
 
