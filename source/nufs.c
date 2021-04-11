@@ -141,6 +141,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         break;
       } else {
         // direntry must be initialized
+        printf("HEREEEEE/n");
         struct stat st;
         rv = nufs_getattr(direntry_arr[ii].name, &st);
         assert(rv == 0);
@@ -384,6 +385,7 @@ void init_root() {
   strcpy(root_dirent->name, ".");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
+  assert(strcmp(root_dirent->name, ".") == 0);
 
   // root_inode->refs++;
   // root_dirent[1].inum = 0;
