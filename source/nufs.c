@@ -65,6 +65,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     char *desired_filename;
     strcpy(desired_filename, &path[1]);
 
+    printf("entered getattr else, part 1 no segf\n");
+
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
