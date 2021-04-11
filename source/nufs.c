@@ -67,7 +67,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     char *desired_filename;
     printf("entered getattr else, part 3 no segf\n");
     printf("trying to copy %s\n", path);
-    assert(strlen(path > 1));
+    assert(strlen(path) > 1);
     printf("trying to copy %s\n", path[1]);
 
     strcpy(desired_filename, &path[1]);
