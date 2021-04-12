@@ -107,6 +107,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // printf("trying to access ii direntry_arr, no segf\n");
     direntry desired_direntry = direntry_arr[ii];
 
+    printf("using the %ld-ith direntry\n", ii);
     // printf("trying to init inode, no segf\n");
 
     // bitmap_get(get_inode_bitmap(), desired_dirent
