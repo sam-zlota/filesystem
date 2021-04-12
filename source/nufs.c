@@ -114,6 +114,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // pointer arithmetic
     // TODO: make sure this is proper arithmetic
     inode *desired_inode = root_inode + desired_inum;
+    printf("desired inum: %ld\n", desired_inum);
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
