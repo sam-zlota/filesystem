@@ -98,7 +98,7 @@ int nufs_getattr(const char *path, struct stat *st) {
       } else {
         nufs_mknod(path, 0100644, 0);
       }
-      return nufs_getattr(path, mode, rdev);
+      return nufs_getattr(path, st);
     }
 
     // printf("trying to access ii direntry_arr, no segf\n");
