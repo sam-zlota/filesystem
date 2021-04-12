@@ -28,7 +28,6 @@ int ROOT_PNUM = -1;
 // 78*sizeof(direntry) = 78*52 ~ 4096
 static int MAX_DIRENTRIES = 78;
 
-int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 // implementation for: man 2 access
 // Checks if a file exists.
 int nufs_access(const char *path, int mask) {
@@ -64,9 +63,12 @@ int nufs_getattr(const char *path, struct stat *st) {
     // only handling files in root directory
     // so we can just ignore first character "/"
     // and assume the rest is the filename
-    printf("tryingt to split: %s file\n", path);
+
     slist *filenames = s_split(path, '/');
     char *desired_filename = filenames->data;
+
+    printf("receieved path: %s,  got filename : %s X\n", path,
+           desired_filename);
     // strcpy(desired_filename, &path[1]);
     // iterate over direntry_arr
     int ii;
@@ -89,7 +91,14 @@ int nufs_getattr(const char *path, struct stat *st) {
     if (not_found) {
       // dummy values
       printf("calling mknod\n");
-      return nufs_mknod(path, 0100644, 0);
+      // TODO:make sure not infitite
+      // there has to be space etc
+      if (ii == MAX_DIRENTRIES - 1) {
+        return -ENOSPC;
+      } else {
+        nufs_mknod(path, 0100644, 0);
+      }
+      return nufs_getattr(path, mode, rdev);
     }
 
     // printf("trying to access ii direntry_arr, no segf\n");
@@ -100,6 +109,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // bitmap_get(get_inode_bitmap(), desired_dirent
     int desired_inum = desired_direntry.inum;
     // pointer arithmetic
+    // TODO: make sure this is proper arithmetic
     inode *desired_inode = root_inode + desired_inum;
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
@@ -128,15 +138,16 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   if (strcmp(path, "/") == 0) {
     rv = nufs_getattr("/", &st);
     assert(rv == 0);
-    filler(buf, "/", &st, 0);
-    buf += strlen("/");
+    filler(buf, ".", &st, 0);
+    // buf += strlen("/");
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
 
     // iterate over direntry_arr
     int ii;
     int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
+    // skip past first entry becasue it will always be "."
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (ii >= 1 && direntry_arr[ii].inum == 0) {
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
@@ -144,14 +155,16 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         break;
       } else {
         // direntry must be initialized
-        printf("HEREEEEE: %ld\n", ii);
-        struct stat st2;
+        // printf("HEREEEEE: %ld\n", ii);
+        // struct stat st2
+
         rv = nufs_getattr(direntry_arr[ii].name, &st);
         assert(rv == 0);
-        printf("NO SEG: %ld\n", ii);
+        // printf("NO SEG: %ld\n", ii);
 
-        filler(buf, direntry_arr[ii].name, &st2, 0);
-        buf += 48;
+        //"/name"TODO: make sure null terminated and have / in front
+        filler(buf, direntry_arr[ii].name, &st, 0);
+        printf("read %s from dir\n", direntry_arr[ii].name);
       }
     }
 
@@ -171,22 +184,27 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
   printf("called mknod\n");
 
-  char *desired_filename;
-  strcpy(desired_filename, &path[1]);
+  slist *filenames = s_split(path, '/');
+  char *desired_filename = filenames->data;
 
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(root_inode->ptrs[0]);
   direntry *direntry_arr = (direntry *)root_data;
 
   int ii;
-  int not_found = 1;
+  // int not_found = 1;
   // TODO: handle duplicates?
-  for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
+  for (ii = 1; ii <= MAX_DIRENTRIES; ii++) {
+    if (ii == MAX_DIRENTRIES) {
+      // no space
+      // TODO: handle extra space
+      return -EDQUOT;
+    }
     if (ii > 1 && direntry_arr[ii].inum == 0) {
       // 0 is reserved for root or uninitialzied, so we must have
       // reached end of array, because array is contiguous and we
       // are not searching for root
-      not_found = 0;
+      // we have found an open direntry
       break;
     }
     if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
@@ -196,7 +214,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     }
   }
 
-  // if (not_found) return -EDQUOT;  // directory space
+  assert(ii < MAX_DIRENTRIES);
 
   direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   int first_free_inum = alloc_inum();
@@ -370,9 +388,9 @@ void init_root() {
   // initialize root inode
   root_inode->refs = 1;
   root_inode->mode = 040755;            // directory
-  root_inode->size = sizeof(direntry);  //
+  root_inode->size = sizeof(direntry);  // init to size of one direntry, itself
 
-  // assign the page number of the root to first empty page
+  // assign the page/block number of the root to first empty page
   // after pages bitmap, inode bitmap and inode array:
   int bytes = 32 + 32 + (256 * sizeof(inode));
   ROOT_PNUM = bytes_to_pages(bytes);
@@ -389,10 +407,10 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".\0");
+  strcpy(root_dirent->name, ".\0");  // TODO:check null termination
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
-  assert(strcmp(root_dirent->name, ".\0") == 0);
+  // assert(strcmp(root_dirent->name, ".\0") == 0);
 
   // root_inode->refs++;
   // root_dirent[1].inum = 0;

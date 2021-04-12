@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/**
+ *
+ * Inspired by https://github.com/ryanlayer/cs/tree/master/bitmap
+ *
+ */
+
 int bitmap_get(void *bm, int ii) {
   assert(ii < 256);
 
