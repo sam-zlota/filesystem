@@ -288,7 +288,7 @@ int nufs_chmod(const char *path, mode_t mode) {
   inode *root_inode = get_root_inode();
 
   if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode  // directory
+    root_inode->mode = mode;  // directory
   } else {
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
