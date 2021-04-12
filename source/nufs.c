@@ -32,7 +32,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 // implementation for: man 2 access
 // Checks if a file exists.
 
-char *get_filename_from_path(path) { return path + 1; }
+char *get_filename_from_path(path) { return (char *)(path + 1); }
 
 int nufs_access(const char *path, int mask) {
   int rv = 0;
