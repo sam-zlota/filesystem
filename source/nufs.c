@@ -85,7 +85,7 @@ int nufs_getattr(const char *path, struct stat *st) {
       // }
       if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
         // desired dir entry is at index ii
-        printf("found/n");
+        printf("found match in getattr\n");
         not_found = 0;
         break;
       }
