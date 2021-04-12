@@ -284,153 +284,198 @@ int nufs_rename(const char *from, const char *to) {
 
 int nufs_chmod(const char *path, mode_t mode) {
   int rv = 0;
-  printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
-  return rv;
-}
-
-int nufs_truncate(const char *path, off_t size) {
-  int rv = -1;
-  printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
-  return rv;
-}
-
-// this is called on open, but doesn't need to do much
-// since FUSE doesn't assume you maintain state for
-// open files.
-int nufs_open(const char *path, struct fuse_file_info *fi) {
-  int rv = 0;
-  printf("open(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-// Actually read data
-int nufs_read(const char *path, char *buf, size_t size, off_t offset,
-              struct fuse_file_info *fi) {
-  int rv = 6;
-  strcpy(buf, "hello\n");
-  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-  return rv;
-}
-
-// Actually write data
-int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
-               struct fuse_file_info *fi) {
-  int rv = -1;
-  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-  return rv;
-}
-
-// Update the timestamps on a file or directory.
-int nufs_utimens(const char *path, const struct timespec ts[2]) {
-  int rv = -1;
-  printf("utimens(%s, [%ld, %ld; %ld %ld]) -> %d\n", path, ts[0].tv_sec,
-         ts[0].tv_nsec, ts[1].tv_sec, ts[1].tv_nsec, rv);
-  return rv;
-}
-
-// Extended operations
-int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
-               unsigned int flags, void *data) {
-  int rv = -1;
-  printf("ioctl(%s, %d, ...) -> %d\n", path, cmd, rv);
-  return rv;
-}
-
-void nufs_init_ops(struct fuse_operations *ops) {
-  memset(ops, 0, sizeof(struct fuse_operations));
-  ops->access = nufs_access;
-  ops->getattr = nufs_getattr;
-  ops->readdir = nufs_readdir;
-  ops->mknod = nufs_mknod;
-  ops->mkdir = nufs_mkdir;
-  ops->link = nufs_link;
-  ops->unlink = nufs_unlink;
-  ops->rmdir = nufs_rmdir;
-  ops->rename = nufs_rename;
-  ops->chmod = nufs_chmod;
-  ops->truncate = nufs_truncate;
-  ops->open = nufs_open;
-  ops->read = nufs_read;
-  ops->write = nufs_write;
-  ops->utimens = nufs_utimens;
-  ops->ioctl = nufs_ioctl;
-};
-
-struct fuse_operations nufs_ops;
-
-void init_root() {
-  /**
-   *
-   * |PAGE 0|
-   *      ---------------------------------
-   *     | Pages Bitmap (32 bytes, 256 bits)
-   *     | ---------------------------------
-   *     | Inode Bitmap (32 bytes, 256 bits)
-   *     | ---------------------------------
-   *     | Beggining of Inode Array (4032 bytes = 168 * sizeof(inode))
-   *      ---------------------------------
-   * |PAGE 1|
-   *      ---------------------------------
-   *     | Remainder of Inode Array (2112 bytes = 88 * sizeof(inode))
-   *      ---------------------------------
-   * |PAGE 2|
-   *      ---------------------------------
-   *     | ROOT DATA BLOCK (array of direntry, max_len 64)
-   *      ---------------------------------
-   *
-   */
-
-  void *inode_bitmap = get_inode_bitmap();
-  void *pages_bitmap = get_pages_bitmap();
-
-  // mark PAGE 1 in pages bitmap used for bitmaps and inode array
-  bitmap_put(pages_bitmap, 1, 1);
-
-  // mark INODE 0 in inode bitmap for root inode
-  bitmap_put(inode_bitmap, 0, 1);
 
   inode *root_inode = get_root_inode();
-  // initialize root inode
-  root_inode->refs = 1;
-  root_inode->mode = 040755;            // directory
-  root_inode->size = sizeof(direntry);  // init to size of one direntry, itself
 
-  // assign the page/block number of the root to first empty page
-  // after pages bitmap, inode bitmap and inode array:
-  int bytes = 32 + 32 + (256 * sizeof(inode));
-  ROOT_PNUM = bytes_to_pages(bytes);
+  if (strcmp(path, "/") == 0) {
+    root_inode->mode = mode  // directory
 
-  // we know ROOT_PNUM is 2, mark used
-  bitmap_put(pages_bitmap, ROOT_PNUM, 1);
+  } else {
+    void *root_block = pages_get_page(ROOT_PNUM);
+    direntry *direntry_arr = (direntry *)root_block;
 
-  // the data block corresponding to the root
-  void *root_block = pages_get_page(ROOT_PNUM);
-  memset(root_block, 0, 4096);
+    char *desired_filename = get_filename_from_path(path);
 
-  // making sure the root inode points to the root data block page num
-  root_inode->ptrs[0] = ROOT_PNUM;
+    int ii;
+    int not_found = 1;
+    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
+      // if (ii > 1 && direntry_arr[ii].inum == 0) {
+      //   // 0 is reserved for root or uninitialzied, so we must have
+      //   // reached end of array, because array is contiguous and we
+      //   // are not searching for root
 
-  // storing first direntry in root dir, itself,
-  direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".\0");  // TODO:check null termination
-  // root direntry coresponds to first inode
-  root_dirent->inum = 0;
-  // assert(strcmp(root_dirent->name, ".\0") == 0);
+      //   break;
+      // }
+      if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+        // desired dir entry is at index ii
 
-  // root_inode->refs++;
-  // root_dirent[1].inum = 0;
-  // strcpy(root_dirent[1].name, ".");
-  // root_dirent[1].name = ".";
-}
+        not_found = 0;
+        break;
+      }
+    }
 
-int main(int argc, char *argv[]) {
-  assert(argc > 2 && argc < 6);
-  // printf("TODO: mount %s as data file\n", argv[--argc]);
-  // char *path = argv[--argc];
-  // puts(path);
-  pages_init(argv[--argc]);
-  init_root();
-  // storage_init(argv[--argc]);
-  nufs_init_ops(&nufs_ops);
-  return fuse_main(argc, argv, &nufs_ops, NULL);
-}
+    if (not_found) {
+      return -ENOENT;
+    }
+
+    // printf("trying to access ii direntry_arr, no segf\n");
+    direntry desired_direntry = direntry_arr[ii];
+
+    int desired_inum = desired_direntry.inum;
+    // pointer arithmetic
+    // TODO: make sure this is proper arithmetic
+    inode *desired_inode = &root_inode[desired_inum];
+    desired_inode->mode = mode;  //  0100644; // regular file
+
+    printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
+
+    return rv;
+  }
+
+  int nufs_truncate(const char *path, off_t size) {
+    int rv = -1;
+    printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
+    return rv;
+  }
+
+  // this is called on open, but doesn't need to do much
+  // since FUSE doesn't assume you maintain state for
+  // open files.
+  int nufs_open(const char *path, struct fuse_file_info *fi) {
+    int rv = 0;
+    printf("open(%s) -> %d\n", path, rv);
+    return rv;
+  }
+
+  // Actually read data
+  int nufs_read(const char *path, char *buf, size_t size, off_t offset,
+                struct fuse_file_info *fi) {
+    int rv = 6;
+    strcpy(buf, "hello\n");
+    printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+    return rv;
+  }
+
+  // Actually write data
+  int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
+                 struct fuse_file_info *fi) {
+    int rv = -1;
+    printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+    return rv;
+  }
+
+  // Update the timestamps on a file or directory.
+  int nufs_utimens(const char *path, const struct timespec ts[2]) {
+    int rv = -1;
+    printf("utimens(%s, [%ld, %ld; %ld %ld]) -> %d\n", path, ts[0].tv_sec,
+           ts[0].tv_nsec, ts[1].tv_sec, ts[1].tv_nsec, rv);
+    return rv;
+  }
+
+  // Extended operations
+  int nufs_ioctl(const char *path, int cmd, void *arg,
+                 struct fuse_file_info *fi, unsigned int flags, void *data) {
+    int rv = -1;
+    printf("ioctl(%s, %d, ...) -> %d\n", path, cmd, rv);
+    return rv;
+  }
+
+  void nufs_init_ops(struct fuse_operations * ops) {
+    memset(ops, 0, sizeof(struct fuse_operations));
+    ops->access = nufs_access;
+    ops->getattr = nufs_getattr;
+    ops->readdir = nufs_readdir;
+    ops->mknod = nufs_mknod;
+    ops->mkdir = nufs_mkdir;
+    ops->link = nufs_link;
+    ops->unlink = nufs_unlink;
+    ops->rmdir = nufs_rmdir;
+    ops->rename = nufs_rename;
+    ops->chmod = nufs_chmod;
+    ops->truncate = nufs_truncate;
+    ops->open = nufs_open;
+    ops->read = nufs_read;
+    ops->write = nufs_write;
+    ops->utimens = nufs_utimens;
+    ops->ioctl = nufs_ioctl;
+  };
+
+  struct fuse_operations nufs_ops;
+
+  void init_root() {
+    /**
+     *
+     * |PAGE 0|
+     *      ---------------------------------
+     *     | Pages Bitmap (32 bytes, 256 bits)
+     *     | ---------------------------------
+     *     | Inode Bitmap (32 bytes, 256 bits)
+     *     | ---------------------------------
+     *     | Beggining of Inode Array (4032 bytes = 168 * sizeof(inode))
+     *      ---------------------------------
+     * |PAGE 1|
+     *      ---------------------------------
+     *     | Remainder of Inode Array (2112 bytes = 88 * sizeof(inode))
+     *      ---------------------------------
+     * |PAGE 2|
+     *      ---------------------------------
+     *     | ROOT DATA BLOCK (array of direntry, max_len 64)
+     *      ---------------------------------
+     *
+     */
+
+    void *inode_bitmap = get_inode_bitmap();
+    void *pages_bitmap = get_pages_bitmap();
+
+    // mark PAGE 1 in pages bitmap used for bitmaps and inode array
+    bitmap_put(pages_bitmap, 1, 1);
+
+    // mark INODE 0 in inode bitmap for root inode
+    bitmap_put(inode_bitmap, 0, 1);
+
+    inode *root_inode = get_root_inode();
+    // initialize root inode
+    root_inode->refs = 1;
+    root_inode->mode = 040755;  // directory
+    root_inode->size =
+        sizeof(direntry);  // init to size of one direntry, itself
+
+    // assign the page/block number of the root to first empty page
+    // after pages bitmap, inode bitmap and inode array:
+    int bytes = 32 + 32 + (256 * sizeof(inode));
+    ROOT_PNUM = bytes_to_pages(bytes);
+
+    // we know ROOT_PNUM is 2, mark used
+    bitmap_put(pages_bitmap, ROOT_PNUM, 1);
+
+    // the data block corresponding to the root
+    void *root_block = pages_get_page(ROOT_PNUM);
+    memset(root_block, 0, 4096);
+
+    // making sure the root inode points to the root data block page num
+    root_inode->ptrs[0] = ROOT_PNUM;
+
+    // storing first direntry in root dir, itself,
+    direntry *root_dirent = (direntry *)root_block;
+    strcpy(root_dirent->name, ".\0");  // TODO:check null termination
+    // root direntry coresponds to first inode
+    root_dirent->inum = 0;
+    // assert(strcmp(root_dirent->name, ".\0") == 0);
+
+    // root_inode->refs++;
+    // root_dirent[1].inum = 0;
+    // strcpy(root_dirent[1].name, ".");
+    // root_dirent[1].name = ".";
+  }
+
+  int main(int argc, char *argv[]) {
+    assert(argc > 2 && argc < 6);
+    // printf("TODO: mount %s as data file\n", argv[--argc]);
+    // char *path = argv[--argc];
+    // puts(path);
+    pages_init(argv[--argc]);
+    init_root();
+    // storage_init(argv[--argc]);
+    nufs_init_ops(&nufs_ops);
+    return fuse_main(argc, argv, &nufs_ops, NULL);
+  }
