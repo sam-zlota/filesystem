@@ -31,6 +31,9 @@ static int MAX_DIRENTRIES = 78;
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 // implementation for: man 2 access
 // Checks if a file exists.
+
+char *get_filename_from_path(path) { return path + 1; }
+
 int nufs_access(const char *path, int mask) {
   int rv = 0;
   printf("access(%s, %04o) -> %d\n", path, mask, rv);
@@ -65,11 +68,9 @@ int nufs_getattr(const char *path, struct stat *st) {
     // so we can just ignore first character "/"
     // and assume the rest is the filename
 
-    slist *filenames = s_split(path, '/');
-    char *desired_filename = filenames->data;
+    char *desired_filename = get_filename_from_path(path);
 
-    printf("receieved path: %s,  got filename : %s X\n", path,
-           desired_filename);
+    printf("receieved path: %s,  got filename: %s X\n", path, desired_filename);
     // strcpy(desired_filename, &path[1]);
     // iterate over direntry_arr
     int ii;
@@ -186,8 +187,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
   printf("called mknod\n");
 
-  slist *filenames = s_split(path, '/');
-  char *desired_filename = filenames->data;
+  // slist *filenames = s_split(path, '/');
+  char *desired_filename = get_filename_from_path(path);
 
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(root_inode->ptrs[0]);
