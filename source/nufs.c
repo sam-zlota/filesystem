@@ -394,7 +394,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     int rv = -1;
 
     printf("called write\n");
-    int rv = 0;
     inode *root_inode = get_root_inode();
     if (strcmp(path, "/") == 0) {
       return -1;
