@@ -43,7 +43,7 @@ int nufs_access(const char *path, int mask) {
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
-  printf("called getattr\n");
+  // printf("called getattr\n");
 
   int rv = 0;
   // printf("entered getattr , lookinf for path %s\n", path);
@@ -85,7 +85,7 @@ int nufs_getattr(const char *path, struct stat *st) {
       // }
       if (strcmp(path, direntry_arr[ii].name) == 0) {
         // desired dir entry is at index ii
-        printf("found match in getattr\n");
+        // printf("found match in getattr\n");
         not_found = 0;
         break;
       }
@@ -93,7 +93,7 @@ int nufs_getattr(const char *path, struct stat *st) {
 
     if (not_found) {
       // dummy values
-      printf("calling mknod\n");
+      // printf("calling mknod\n");
       // TODO:make sure not infitite
       // there has to be space etc
       if (ii == MAX_DIRENTRIES - 1) {
@@ -107,7 +107,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // printf("trying to access ii direntry_arr, no segf\n");
     direntry desired_direntry = direntry_arr[ii];
 
-    printf("using the %ld-ith direntry\n", ii);
+    // printf("using the %ld-ith direntry\n", ii);
     // printf("trying to init inode, no segf\n");
 
     // bitmap_get(get_inode_bitmap(), desired_dirent
@@ -115,7 +115,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // pointer arithmetic
     // TODO: make sure this is proper arithmetic
     inode *desired_inode = &root_inode[desired_inum];
-    printf("desired inum: %ld\n", desired_inum);
+    // printf("desired inum: %ld\n", desired_inum);
     st->st_mode = desired_inode->mode;  //  0100644; // regular file
     st->st_size = desired_inode->size;
     st->st_uid = getuid();
@@ -140,7 +140,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   inode *root_inode = get_root_inode();
 
   assert(strcmp(path, ".") != 0);
-  printf("called readdir\n");
+  // printf("called readdir\n");
   if (strcmp(path, "/") == 0) {
     rv = nufs_getattr("/", &st);
     assert(rv == 0);
@@ -155,8 +155,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // skip past first entry becasue it will always be "."
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum != 0) {
-        printf("found entry at: %ld with inum: %ld\n", ii,
-               direntry_arr[ii].inum);
+        // printf("found entry at: %ld with inum: %ld\n", ii,
+        //        direntry_arr[ii].inum);
         // {
         //   // 0 is reserved for root or uninitialzied, so we must have
         //   // reached end of array, because array is contiguous and we
@@ -193,7 +193,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int rv = -1;
-  printf("called mknod\n");
+  // printf("called mknod\n");
 
   // slist *filenames = s_split(path, '/');
   // char *desired_filename = get_filename_from_path(path);
@@ -264,7 +264,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
 }
 
 int nufs_unlink(const char *path) {
-  printf("called unlink\n");
+  // printf("called unlink\n");
   int rv = 0;
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
@@ -297,13 +297,13 @@ int nufs_unlink(const char *path) {
 
     desired_inode->refs--;
     if (desired_inode->refs == 0) {
-      printf("ERASING inum: %ld \n", desired_direntry->inum);
+      // printf("ERASING inum: %ld \n", desired_direntry->inum);
       assert(desired_direntry->inum != 0);
       free_page(desired_page_num);
       free_inode(desired_inum);
       memset(desired_direntry, 0, sizeof(direntry));
-      assert(desired_direntry->inum == 0);
-      printf("ERASED inum should be zero: %ld \n", desired_direntry->inum);
+      // assert(desired_direntry->inum == 0);
+      // printf("ERASED inum should be zero: %ld \n", desired_direntry->inum);
     }
 
     printf("unlink(%s) -> %d\n", path, rv);
@@ -333,7 +333,7 @@ int nufs_rename(const char *from, const char *to) {
 
 int nufs_chmod(const char *path, mode_t mode) {
   int rv = 0;
-  printf("calling chmod\n");
+  // printf("calling chmod\n");
   inode *root_inode = get_root_inode();
 
   if (strcmp(path, "/") == 0) {
@@ -392,7 +392,7 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-  printf("called read with size: %ld\n", size);
+  // printf("called read with size: %ld\n", size);
   int rv = 0;
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
@@ -440,7 +440,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
   int rv = -1;
 
-  printf("called write with size: %ld\n", size);
+  // printf("called write with size: %ld\n", size);
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
     return -1;
