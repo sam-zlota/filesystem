@@ -262,6 +262,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
 
 int nufs_unlink(const char *path) {
   int rv = -1;
+
   printf("unlink(%s) -> %d\n", path, rv);
   return rv;
 }
