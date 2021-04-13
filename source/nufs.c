@@ -155,6 +155,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // skip past first entry becasue it will always be "."
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum != 0) {
+        print("found entry at: %ld\n", ii);
         // {
         //   // 0 is reserved for root or uninitialzied, so we must have
         //   // reached end of array, because array is contiguous and we
