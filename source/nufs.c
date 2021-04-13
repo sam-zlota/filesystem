@@ -302,6 +302,7 @@ int nufs_unlink(const char *path) {
       free_inode(desired_inum);
       memset(&desired_direntry, 0, sizeof(direntry));
       assert(desired_direntry.inum == 0);
+      printf("ERASED\n");
     }
 
     printf("unlink(%s) -> %d\n", path, rv);
