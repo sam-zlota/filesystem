@@ -5,15 +5,15 @@
 
 #define DIR_NAME 48
 
-#include "slist.h"
-#include "pages.h"
+// #include "slist.h"
 #include "inode.h"
+#include "pages.h"
+#include "slist.h"
 
-typedef struct dirent {
-    char name[DIR_NAME];
-    int  inum;
-    char _reserved[12];
-} dirent;
+typedef struct direntry {
+  char name[DIR_NAME];
+  int inum;
+} direntry;
 
 void directory_init();
 int directory_lookup(inode* dd, const char* name);
@@ -24,4 +24,3 @@ slist* directory_list(const char* path);
 void print_directory(inode* dd);
 
 #endif
-
