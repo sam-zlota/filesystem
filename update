@@ -1,0 +1,4 @@
+make clean
+make unmount
+git pull
+make mount
