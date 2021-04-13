@@ -155,7 +155,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // skip past first entry becasue it will always be "."
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum != 0) {
-        printf("found entry at: %ld\n", ii);
+        printf("found entry at: %ld with inum: %ld\n", ii,
+               direntry_arr[ii].inum);
         // {
         //   // 0 is reserved for root or uninitialzied, so we must have
         //   // reached end of array, because array is contiguous and we
@@ -296,13 +297,13 @@ int nufs_unlink(const char *path) {
 
     desired_inode->refs--;
     if (desired_inode->refs == 0) {
-      printf("ERASING\n");
+      printf("ERASING inum: %ld \n", desired_direntry.inum);
       assert(desired_direntry.inum != 0);
       free_page(desired_page_num);
       free_inode(desired_inum);
       memset(&desired_direntry, 0, sizeof(direntry));
       assert(desired_direntry.inum == 0);
-      printf("ERASED\n");
+      printf("ERASED inum should be zero: %ld \n", desired_direntry.inum);
     }
 
     printf("unlink(%s) -> %d\n", path, rv);
