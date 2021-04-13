@@ -494,7 +494,7 @@ int nufs_utimens(const char *path, const struct timespec ts[2]) {
 // Extended operations
 int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
                unsigned int flags, void *data) {
-  int rv = -1;
+  int rv = 0;
   printf("ioctl(%s, %d, ...) -> %d\n", path, cmd, rv);
   return rv;
 }
