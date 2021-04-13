@@ -70,9 +70,9 @@ int nufs_getattr(const char *path, struct stat *st) {
 
     // char *desired_filename = get_filename_from_path(path);
 
-    printf("receieved path: %s,  got filename: %s X\n", path, desired_filename);
-    // strcpy(desired_filename, &path[1]);
-    // iterate over direntry_arr
+    // printf("receieved path: %s,  got filename: %s X\n", path,
+    // desired_filename); strcpy(desired_filename, &path[1]); iterate over
+    // direntry_arr
     int ii;
     int not_found = 1;
     for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
