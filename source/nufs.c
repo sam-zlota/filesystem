@@ -157,6 +157,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         // 0 is reserved for root or uninitialzied, so we must have
         // reached end of array, because array is contiguous and we
         // are not searching for root
+
+        printf("breaking from loop\n");
         break;
       } else {
         // direntry must be initialized
