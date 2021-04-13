@@ -68,7 +68,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     // so we can just ignore first character "/"
     // and assume the rest is the filename
 
-    char *desired_filename = get_filename_from_path(path);
+    // char *desired_filename = get_filename_from_path(path);
 
     printf("receieved path: %s,  got filename: %s X\n", path, desired_filename);
     // strcpy(desired_filename, &path[1]);
@@ -83,7 +83,7 @@ int nufs_getattr(const char *path, struct stat *st) {
 
       //   break;
       // }
-      if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+      if (strcmp(path, direntry_arr[ii].name) == 0) {
         // desired dir entry is at index ii
         printf("found match in getattr\n");
         not_found = 0;
@@ -192,7 +192,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   printf("called mknod\n");
 
   // slist *filenames = s_split(path, '/');
-  char *desired_filename = get_filename_from_path(path);
+  // char *desired_filename = get_filename_from_path(path);
 
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(root_inode->ptrs[0]);
@@ -214,7 +214,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       // we have found an open direntry
       break;
     }
-    if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+    if (strcmp(path, direntry_arr[ii].name) == 0) {
       // desired dir entry is at index ii
       printf("-EEXISt/n");
       return -EEXIST;
@@ -230,8 +230,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     return rv;
   }
   first_empty_direntry->inum = first_free_inum;
-  strcpy(first_empty_direntry->name, "/");
-  strcat(first_empty_direntry->name, desired_filename);
+  // strcpy(first_empty_direntry->name, "/");
+  strcat(first_empty_direntry->name, path);
   root_inode->size += sizeof(direntry);
 
   inode *new_inode = get_inode(first_empty_direntry->inum);
