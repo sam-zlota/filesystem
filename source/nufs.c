@@ -347,7 +347,7 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-  printf("called read\n");
+  printf("called read with size: %ld\n", size);
   int rv = 0;
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
@@ -394,7 +394,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
   int rv = -1;
 
-  printf("called write\n");
+  printf("called write with size: %ld\n", size);
   inode *root_inode = get_root_inode();
   if (strcmp(path, "/") == 0) {
     return -1;
