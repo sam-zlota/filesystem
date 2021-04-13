@@ -296,12 +296,12 @@ int nufs_chmod(const char *path, mode_t mode) {
     void *root_block = pages_get_page(ROOT_PNUM);
     direntry *direntry_arr = (direntry *)root_block;
 
-    char *desired_filename = get_filename_from_path(path);
+    // char *desired_filename = get_filename_from_path(path);
 
     int ii;
     int not_found = 1;
     for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(desired_filename, direntry_arr[ii].name) == 0) {
+      if (strcmp(path, direntry_arr[ii].name) == 0) {
         // desired dir entry is at index ii
 
         not_found = 0;
