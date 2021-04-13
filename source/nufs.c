@@ -389,6 +389,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   }
 }
 
+// TODO: update size of inode when write
 // Actually write data
 int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
@@ -429,6 +430,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
     int desired_page_num = desired_inode->ptrs[0];
     void *desired_data_block = pages_get_page(desired_page_num);
     memcpy(desired_data_block, buf, size);
+    desired_inode->size += size;
     rv = size;
 
     printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
