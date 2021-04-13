@@ -216,6 +216,7 @@ int nufs_unlink(const char *path) {
       // ERASING
       free_page(desired_page_num);
       free_inode(desired_inum);
+      memset(desired_direntry, 0, sizeof(direntry));
     }
 
     printf("unlink(%s) -> %d\n", path, rv);
