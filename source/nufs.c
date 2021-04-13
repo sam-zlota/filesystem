@@ -300,15 +300,9 @@ int nufs_unlink(const char *path) {
       memset(&desired_direntry, 0, sizeof(direntry));
     }
 
-    void *desired_data_block = pages_get_page(desired_page_num);
-    memcpy(buf, desired_data_block + offset, size);
-    rv = size;
-    printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+    printf("unlink(%s) -> %d\n", path, rv);
     return rv;
   }
-
-  printf("unlink(%s) -> %d\n", path, rv);
-  return rv;
 }
 
 int nufs_link(const char *from, const char *to) {
