@@ -1,5 +1,0 @@
-#!/bin/bash
-clang-format -i -style=Google *h *c
-git add *
-git commit -m "saving work"
-git push
