@@ -207,7 +207,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
       // TODO: handle extra space
       return -EDQUOT;
     }
-    if (ii > 1 && direntry_arr[ii].inum == 0) {
+    if (ii >= 1 && direntry_arr[ii].inum == 0) {
       // 0 is reserved for root or uninitialzied, so we must have
       // reached end of array, because array is contiguous and we
       // are not searching for root
