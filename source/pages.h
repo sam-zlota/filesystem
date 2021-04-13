@@ -13,5 +13,6 @@ void* get_inode_bitmap();
 int alloc_page();
 int alloc_inum();
 void free_page(int pnum);
+void free_inode(int inum);
 
 #endif

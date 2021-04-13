@@ -154,14 +154,15 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     int not_found = 1;
     // skip past first entry becasue it will always be "."
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (ii >= 1 && direntry_arr[ii].inum == 0) {
-        // 0 is reserved for root or uninitialzied, so we must have
-        // reached end of array, because array is contiguous and we
-        // are not searching for root
+      if (idirentry_arr[ii].inum != 0) {
+        // {
+        //   // 0 is reserved for root or uninitialzied, so we must have
+        //   // reached end of array, because array is contiguous and we
+        //   // are not searching for root
 
-        printf("breaking from loop\n");
-        break;
-      } else {
+        //   printf("breaking from loop\n");
+        //   break;
+        // } else {
         // direntry must be initialized
         // printf("HEREEEEE: %ld\n", ii);
         // struct stat st2
@@ -261,7 +262,50 @@ int nufs_mkdir(const char *path, mode_t mode) {
 }
 
 int nufs_unlink(const char *path) {
-  int rv = -1;
+  printf("called unlink\n");
+  int rv = 0;
+  inode *root_inode = get_root_inode();
+  if (strcmp(path, "/") == 0) {
+    return -1;
+  } else {
+    void *root_block = pages_get_page(ROOT_PNUM);
+    direntry *direntry_arr = (direntry *)root_block;
+
+    int ii;
+    int not_found = 1;
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (strcmp(path, direntry_arr[ii].name) == 0) {
+        not_found = 0;
+        break;
+      }
+    }
+
+    if (not_found) {
+      return -ENOENT;
+    }
+
+    direntry desired_direntry = direntry_arr[ii];
+
+    int desired_inum = desired_direntry.inum;
+    inode *desired_inode = &root_inode[desired_inum];
+
+    // TODO: make sure every file knows it size, does offset need to be
+    // subtracted froms size
+    int desired_page_num = desired_inode->ptrs[0];
+
+    desired_inode->refs--;
+    if (desired_inode->refs == 0) {
+      free_page(desired_page_num);
+      free_inode(desired_inum);
+      memset(&desired_direntry, 0, sizeof(direntry));
+    }
+
+    void *desired_data_block = pages_get_page(desired_page_num);
+    memcpy(buf, desired_data_block + offset, size);
+    rv = size;
+    printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+    return rv;
+  }
 
   printf("unlink(%s) -> %d\n", path, rv);
   return rv;
