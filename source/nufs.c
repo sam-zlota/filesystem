@@ -139,6 +139,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rv;
   inode *root_inode = get_root_inode();
 
+  assert(strcmp(path, ".") != 0);
   printf("called readdir\n");
   if (strcmp(path, "/") == 0) {
     rv = nufs_getattr("/", &st);
@@ -171,7 +172,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
         //"/name"TODO: make sure null terminated and have / in front
         filler(buf, direntry_arr[ii].name, &st, 0);
-        printf("read %s from dir\n", direntry_arr[ii].name);
+        // printf("read %s from dir\n", direntry_arr[ii].name);
       }
     }
 
