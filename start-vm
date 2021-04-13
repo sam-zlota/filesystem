@@ -1,2 +1,0 @@
-#!/bin/bash 
-ssh -i ~/.ssh/systems2.0_key.pem masatolz@40.71.93.24
