@@ -286,9 +286,9 @@ int nufs_unlink(const char *path) {
       return -ENOENT;
     }
 
-    direntry desired_direntry = direntry_arr[ii];
+    direntry *desired_direntry = &direntry_arr[ii];
 
-    int desired_inum = desired_direntry.inum;
+    int desired_inum = desired_direntry->inum;
     inode *desired_inode = &root_inode[desired_inum];
 
     // TODO: make sure every file knows it size, does offset need to be
@@ -297,13 +297,13 @@ int nufs_unlink(const char *path) {
 
     desired_inode->refs--;
     if (desired_inode->refs == 0) {
-      printf("ERASING inum: %ld \n", desired_direntry.inum);
-      assert(desired_direntry.inum != 0);
+      printf("ERASING inum: %ld \n", desired_direntry->inum);
+      assert(desired_direntry->inum != 0);
       free_page(desired_page_num);
       free_inode(desired_inum);
-      memset(&desired_direntry, 0, sizeof(direntry));
-      assert(desired_direntry.inum == 0);
-      printf("ERASED inum should be zero: %ld \n", desired_direntry.inum);
+      memset(desired_direntry, 0, sizeof(direntry));
+      assert(desired_direntry->inum == 0);
+      printf("ERASED inum should be zero: %ld \n", desired_direntry->inum);
     }
 
     printf("unlink(%s) -> %d\n", path, rv);
