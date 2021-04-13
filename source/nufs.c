@@ -296,6 +296,7 @@ int nufs_unlink(const char *path) {
     desired_inode->refs--;
     if (desired_inode->refs == 0) {
       printf("ERASING\n");
+      assert(desired_direntry.inum != 0);
       free_page(desired_page_num);
       free_inode(desired_inum);
       memset(&desired_direntry, 0, sizeof(direntry));
