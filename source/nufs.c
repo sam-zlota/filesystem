@@ -568,7 +568,7 @@ void init_root() {
 
   // the data block corresponding to the root
   void *root_block = pages_get_page(ROOT_PNUM);
-  memset(root_block, 0, 4096);
+  // memset(root_block, 0, 4096);
 
   // making sure the root inode points to the root data block page num
   root_inode->ptrs[0] = ROOT_PNUM;
