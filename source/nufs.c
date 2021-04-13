@@ -428,10 +428,8 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
       // subtracted froms size
       int desired_page_num = desired_inode->ptrs[0];
       void *desired_data_block = pages_get_page(desired_page_num);
-      memcpy(buf, desired_data_block + offset, size);
+      memcpy(desired_data_block, buf, size);
       rv = size;
-      printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-      return rv;
 
       printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
       return rv;
