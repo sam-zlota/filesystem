@@ -287,7 +287,7 @@ int nufs_rename(const char *from, const char *to) {
 
 int nufs_chmod(const char *path, mode_t mode) {
   int rv = 0;
-
+  printf("calling chmod\n");
   inode *root_inode = get_root_inode();
 
   if (strcmp(path, "/") == 0) {
