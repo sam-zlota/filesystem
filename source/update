@@ -1,0 +1,6 @@
+#!/bin/bash
+make unmount
+make clean
+git pull
+make
+make mount
