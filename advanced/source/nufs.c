@@ -100,10 +100,9 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     int not_found = 1;
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum != 0) {
-        char *name;
-        strcpy(name, (&direntry_arr[ii])->name);
+        direntry *desired_direntry = (direntry *)&direntry_arr[ii];
 
-        rv = nufs_getattr(strcat(name, "/"), &st);
+        rv = nufs_getattr(strcat(strdup(desired_direntry->name), "/"), &st);
         filler(buf, direntry_arr[ii].name, &st, 0);
       }
     }
