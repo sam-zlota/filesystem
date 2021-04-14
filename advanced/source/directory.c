@@ -1,14 +1,13 @@
 // based on cs3650 starter code
-
-
-
 #define DIR_NAME 48
 
-// #include "slist.h"
+#include "directory.h"
 #include "inode.h"
 #include "pages.h"
 #include "slist.h"
+#include "util.h"
 
+/*
 typedef struct direntry {
   char name[DIR_NAME];
   int inum;
@@ -20,43 +19,66 @@ int tree_lookup(const char* path);
 int directory_put(inode* dd, const char* name, int inum);
 int directory_delete(inode* dd, const char* name);
 slist* directory_list(const char* path);
-void print_directory(inode* dd);
+void print_directory(inode* dd);*/
 
+// Returns inode for the given file name in the given directory 
+// Returns -1 if we can't find it
+int directory_lookup(inode* dd, const char* name)
+{   
+    direntry* entries = (direntry*)pages_get_page(dd->ptrs[0] + 2);
 
+    int ii = 0;
 
-//returns the inum of this path
+    while (ii < min(dd->size, PAGE_SIZE))
+    {
+        if (strcmp(entries[ii].name, name) == 0)
+        {
+          return entries[ii].inum;
+        }
+        ii++;
+    }
+
+    return -1;
+}
+
+// Returns the parent of this path
 int tree_lookup(const char* path) {
-  //return inum
-  
-  inode *root_inode = get_root_inode();
-  //hanlde non root dir
+  slist* delim_path = s_split(get_file_name_from_path(path), '/');
+  int curr_dir = 0;
 
-  if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode;  // directory
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-
-    //Handle infinite dir enties
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      return -ENOENT;
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-   
+  // This means that we are at the root node
+  if (delim_path->next == NULL)
+  {
+    return 0;
   }
 
+  // Loop through the deliminated path, terminating only when you are the parent of the last
+  // node in the list
+  while (delim_path->next->next)
+  {
+    curr_dir = directory_lookup(get_inode(curr_dir), delim_path->data);
+    delim_path = delim_path->next;
+  }
 
+  return curr_dir;
+}
+
+// Get the first free entry in the given directory block
+direntry* first_free_entry_in_block(int pnum)
+{
+  direntry* page = (direntry*)pages_get_page(pnum);
+  
+}
+
+direntry* first_free_entry(inode* dd)
+{
+  
+}
+
+// Puts an inum with the given name in the given parent directory, returning the new directory's inum
+int directory_put(inode* dd, const char* name, int inum)
+{
+  
+
+  return 0;
 }

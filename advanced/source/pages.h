@@ -5,6 +5,8 @@
 
 #include <stdio.h>
 
+static int PAGE_SIZE = 4096;
+
 void pages_init(const char* path);
 void pages_free();
 void* pages_get_page(int pnum);
