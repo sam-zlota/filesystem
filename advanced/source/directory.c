@@ -26,6 +26,12 @@ void print_directory(inode* dd);*/
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
 
+  // You're asking me to lookup the root in the root, so just return the root
+  if (strcmp(name, "") == 0)
+  {
+    return 0;
+  }
+
   int ptr_index = 0;  // We want to do the same operation for ptrs[0] and ptrs[1]
   
   int page_index = dd->ptrs[0];
