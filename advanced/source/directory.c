@@ -50,6 +50,7 @@ int directory_lookup(inode* dd, const char* name) {
       page_index = dd->ptrs[1];
     } else if (page_index == dd->ptrs[1]) {
       printf("This shouldn't be reached!");
+      break;
       page_index = dd->iptr;
       ptr_index = 0;
     } else if (ptr_index >= 0) { // TODO this needs to be fixed, later
