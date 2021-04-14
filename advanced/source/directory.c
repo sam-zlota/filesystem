@@ -25,16 +25,13 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
-  int ptr_index =
-      0;  // We want to do the same operation for ptrs[0] and ptrs[1]
+  int ptr_index = -1;
 
   // You're asking me to lookup the root in the root, so just return the root
   if (strcmp(name, "") == 0)
   {
     return 0;
   }
-
-  int ptr_index = 0;  // We want to do the same operation for ptrs[0] and ptrs[1]
   
   int page_index = dd->ptrs[0];
 
@@ -52,7 +49,12 @@ int directory_lookup(inode* dd, const char* name) {
     if (page_index == dd->ptrs[0]) {
       page_index = dd->ptrs[1];
     } else if (page_index == dd->ptrs[1]) {
-      page_index = dd->ptrs[2];
+      printf("This shouldn't be reached!");
+      page_index = dd->iptr;
+      ptr_index = 0;
+    } else if (ptr_index >= 0) { // TODO this needs to be fixed, later
+      ptr_index++;
+      page_index = ptr_index + page_index;
     } else {
       break;
     }
