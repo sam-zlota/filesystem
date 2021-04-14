@@ -1,8 +1,4 @@
 // based on cs3650 starter code
-<<<<<<< HEAD
-=======
-
->>>>>>> d41cd35f39564f7e74793befe398083382f45e47
 #define DIR_NAME 48
 
 #include "directory.h"
