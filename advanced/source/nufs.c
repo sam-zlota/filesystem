@@ -246,33 +246,22 @@ int nufs_rename(const char *from, const char *to) {
 
 int nufs_chmod(const char *path, mode_t mode) {
   int rv = 0;
-  inode *root_inode = get_root_inode();
 
-  if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode;  // directory
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
 
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
+
+
+    int parent_inum = tree_lookup(path);
+    if(parent_inum < 0) {
+      return parent_inum;
     }
-
-    if (not_found) {
-      return -ENOENT;
+    inode* parent_inode = get_inode(parent_inum);
+    char* filename = get_filename_from_path(path);
+    int desired_inum = directory_lookup(parent_inode, filename);
+    if(desired_inum < 0) {
+      return desired_inum;
     }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
     desired_inode->mode = mode;  //  0100644; // regular file
-  }
+  
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
 
   return rv;

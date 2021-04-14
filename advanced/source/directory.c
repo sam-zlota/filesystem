@@ -24,11 +24,15 @@ void print_directory(inode* dd);
 
 
 
+
+
+
+
 //returns the inum of this path
 int tree_lookup(const char* path) {
   //return inum
   
-  inode *root_inode = get_root_inode();
+  // inode *root_inode = get_root_inode();
   //hanlde non root dir
 
   if (strcmp(path, "/") == 0) {
