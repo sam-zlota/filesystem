@@ -102,11 +102,13 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct stat st;
   int rv;
 
-  //will return contents of leaf directory as linkedlist, just their names
-  slist* contents = directory_list(path);
-  while(contents) {
+  // will return contents of leaf directory as linkedlist, just their names
+  slist *contents = directory_list(path);
+  while (contents) {
     rv = nufs_getattr(contents->data, &st);
-    if(rv < 0) {return rv;}
+    if (rv < 0) {
+      return rv;
+    }
     filler(buf, contents->data, &st, 0);
     contents = contents->next;
   }
@@ -118,21 +120,22 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // mknod makes a filesystem object like a file or directory
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
-  //TODO: check mode to see if dir, if so, init dir
+  // TODO: check mode to see if dir, if so, init dir
   int rv = 0;
   int parent_inum = tree_lookup(path);
-  if(parent_inum < 0) {return parent_inum;}
-  inode* parent_inode = get_inode(parent_inum);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
 
-  char* filename = get_filename_from_path(path);
+  char *filename = get_filename_from_path(path);
 
-  //TODO: make sure alloc_inum works
+  // TODO: make sure alloc_inum works
   int new_inum = alloc_inum();
-  //how does directory put init dirs vs files
+  // how does directory put init dirs vs files
   rv = directory_put(parent_inode, filename, new_inum);
 
-
-  //TODO: use for directory put
+  // TODO: use for directory put
   // direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   // int first_free_inum = alloc_inum();
   // if (first_free_inum == -1) {
@@ -171,23 +174,26 @@ int nufs_mkdir(const char *path, mode_t mode) {
 
 int nufs_unlink(const char *path) {
   printf("entered unlink\n");
-  //TODO: handle symbolic links and hard links
+  // TODO: handle symbolic links and hard links
   int rv = 0;
   int parent_inum = tree_lookup(path);
-  if(parent_inum < 0) {return parent_inum;}
-  inode* parent_inode = get_inode(parent_inum);
-  char* filename = get_filename_from_path(path);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
-  if(desired_inum < 0) {return desired_inum;}
-  inode* desired_inode = get_inode(desired_inum);
-  
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
 
   int desired_page_num = desired_inode->ptrs[0];
 
   desired_inode->refs--;
   if (desired_inode->refs == 0) {
     // ERASING
-    //TODO: directory delete
+    // TODO: directory delete
     free_page(desired_page_num);
     free_inode(desired_inum);
     memset(desired_direntry, 0, sizeof(direntry));
@@ -195,7 +201,7 @@ int nufs_unlink(const char *path) {
 
   printf("unlink(%s) -> %d\n", path, rv);
   return rv;
-  }
+}
 }
 
 int nufs_link(const char *from, const char *to) {
@@ -222,13 +228,17 @@ int nufs_chmod(const char *path, mode_t mode) {
   printf("entered chmod\n");
   int rv = 0;
   int parent_inum = tree_lookup(path);
-  if(parent_inum < 0) {return parent_inum;}
-  inode* parent_inode = get_inode(parent_inum);
-  char* filename = get_filename_from_path(path);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
-  if(desired_inum < 0) {return desired_inum;}
-  inode* desired_inode = get_inode(desired_inum);
-  desired_inode->mode = mode; 
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode;
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
@@ -252,24 +262,27 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-
   printf("entered read\n");
   int rv = 0;
   int parent_inum = tree_lookup(path);
-  if(parent_inum < 0) {return parent_inum;}
-  inode* parent_inode = get_inode(parent_inum);
-  char* filename = get_filename_from_path(path);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
-  if(desired_inum < 0) {return desired_inum;}
-  inode* desired_inode = get_inode(desired_inum);
-  //TODO: handle multiple pages
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  // TODO: handle multiple pages
   int desired_page_num = desired_inode->ptrs[0];
   void *desired_data_block = pages_get_page(desired_page_num);
   memcpy(buf, desired_data_block + offset, size);
   rv = size;
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
-  }
+}
 }
 
 // Actually write data
@@ -278,13 +291,17 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   printf("entered write\n");
   int rv = 0;
   int parent_inum = tree_lookup(path);
-  if(parent_inum < 0) {return parent_inum;}
-  inode* parent_inode = get_inode(parent_inum);
-  char* filename = get_filename_from_path(path);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
-  if(desired_inum < 0) {return desired_inum;}
-  inode* desired_inode = get_inode(desired_inum);
-  //TODO: handle multiple pages
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  // TODO: handle multiple pages
   int desired_page_num = desired_inode->ptrs[0];
   void *desired_data_block = pages_get_page(desired_page_num);
   memcpy(desired_data_block, buf, size);
@@ -293,7 +310,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
-  }
+}
 }
 
 // Update the timestamps on a file or directory.
