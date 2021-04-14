@@ -50,7 +50,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
   inode *parent_inode = get_inode(parent_inum);
   char *filename = get_filename_from_path(path);
-  int desired_inum = directory_lookup(parent_inode, git );
+  int desired_inum = directory_lookup(parent_inode, filename);
   if (desired_inum < 0) {
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
