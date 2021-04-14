@@ -25,9 +25,12 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
-  int ptr_index =
-      0;  // We want to do the same operation for ptrs[0] and ptrs[1]
-  while (ptr_index < 2) {
+
+  int ptr_index = 0;  // We want to do the same operation for ptrs[0] and ptrs[1]
+  
+  int page_index = dd->ptrs[0];
+
+  while (1) {
     direntry* entries = (direntry*)pages_get_page(dd->ptrs[0]);
 
     int ii = 0;
@@ -38,13 +41,17 @@ int directory_lookup(inode* dd, const char* name) {
       ii++;
     }
 
-    // If the next element in this array is null, just exit
-    if (dd->ptrs[ptr_index + 1] == 0)
+    if (page_index == dd->ptrs[0]) {
+      page_index = dd->ptrs[1];
+    }
+    else if (page_index == dd->ptrs[1])
+    {
+      page_index = dd->ptrs[2];
+    }
+    else
     {
       break;
     }
-
-    ptr_index++;
   }
 
   return -1;
