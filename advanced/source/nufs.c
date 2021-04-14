@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
   char *path = "/hi";
   char *name = "hi";
   slist *split = s_split(path, '/');
-  printf("/hi/ ->\n");
+  printf("/hi ->\n");
   while (split) {
     printf("\t - %s\n", split->data);
     split = split->next;
