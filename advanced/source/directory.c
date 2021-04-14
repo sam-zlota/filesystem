@@ -39,8 +39,7 @@ int directory_lookup(inode* dd, const char* name) {
     }
 
     // If the next element in this array is null, just exit
-    if (dd->ptrs[ptr_index + 1] == NULL)
-    {
+    if (dd->ptrs[ptr_index + 1] == NULL) {
       break;
     }
 
