@@ -463,6 +463,15 @@ int main(int argc, char *argv[]) {
   // printf("TODO: mount %s as data file\n", argv[--argc]);
   // char *path = argv[--argc];
   // puts(path);
+
+  char *path = "/hi";
+  char *name = "hi";
+  slist *split = s_split(path, '/');
+  printf("/hi ->\n");
+  while (split) {
+    printf("\t - %s\n", split->data);
+    split = split->next;
+  }
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
