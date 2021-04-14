@@ -8,6 +8,8 @@
 #include "slist.h"
 #include "util.h"
 
+static int IPTR_PAGE_SIZE = 4096/sizeof(int);
+
 /*
 typedef struct direntry {
   char name[DIR_NAME];
@@ -36,7 +38,7 @@ int directory_lookup(inode* dd, const char* name) {
   int page_index = dd->ptrs[0];
 
   while (1) {
-    direntry* entries = (direntry*)pages_get_page(dd->ptrs[0]);
+    direntry* entries = (direntry*)pages_get_page(page_index);
 
     int ii = 0;
     while (ii < min(dd->size / sizeof(direntry), MAX_DIRENTRIES)) {
@@ -46,14 +48,13 @@ int directory_lookup(inode* dd, const char* name) {
       ii++;
     }
 
-    if (page_index == dd->ptrs[0]) {
+    // Enumerate out the possibilities for where our page index could be, starting from ptrs[0] and going onto the extra ptrs[] block
+    if (page_index == dd->ptrs[0] && dd->ptrs[1] != 0) {
       page_index = dd->ptrs[1];
-    } else if (page_index == dd->ptrs[1]) {
-      printf("This shouldn't be reached!");
-      break;
+    } else if (page_index == dd->ptrs[1] && dd->iptr != 0) {
       page_index = dd->iptr;
       ptr_index = 0;
-    } else if (ptr_index >= 0) { // TODO this needs to be fixed, later
+    } else if (ptr_index >= 0 && ptr_index < IPTR_PAGE_SIZE) { // TODO this needs to be fixed, later
       ptr_index++;
       page_index = ptr_index + page_index;
     } else {
