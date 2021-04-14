@@ -52,7 +52,7 @@ int directory_lookup(inode* dd, const char* name) {
 // Returns the parent of this path
 int tree_lookup(const char* path) {
   printf("entered tree lookup\n");
-  slist* delim_path = s_split(strdup(path) + 1, '/');
+  slist* delim_path = s_split(strdup(path), '/');
   int curr_dir = 0;
 
   // This means that we are at the root node
