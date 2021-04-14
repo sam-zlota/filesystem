@@ -1,4 +1,8 @@
 // based on cs3650 starter code
+<<<<<<< HEAD
+=======
+
+>>>>>>> d41cd35f39564f7e74793befe398083382f45e47
 #define DIR_NAME 48
 
 #include "directory.h"
@@ -67,12 +71,12 @@ int tree_lookup(const char* path) {
 direntry* first_free_entry_in_block(int pnum)
 {
   direntry* page = (direntry*)pages_get_page(pnum);
-  
+  return 0;
 }
 
 direntry* first_free_entry(inode* dd)
 {
-  
+  return 0; 
 }
 
 // Puts an inum with the given name in the given parent directory, returning the new directory's inum

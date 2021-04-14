@@ -45,80 +45,49 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   memset(st, 0, sizeof(stat));
 
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    st->st_mode = root_inode->mode;
-    st->st_size = root_inode->size;
-    st->st_uid = getuid();
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-    // only handling files in root directory
-    // so we can just ignore first character "/"
-    // and assume the rest is the filename
-
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      if (ii == MAX_DIRENTRIES - 1) {
-        return -ENOSPC;
-      } else {
-        nufs_mknod(path, 0100644, 0);
-      }
-      return nufs_getattr(path, st);
-    }
-
-    // we found the dir entry we were looking for at index ii
-    direntry desired_direntry = direntry_arr[ii];
-
-    // getting the inode for this dir entry
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-
-    st->st_mode = desired_inode->mode;
-    st->st_size = desired_inode->size;
-    st->st_uid = getuid();
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    rv = nufs_mknod(path, 0100644, 0);
+    if (rv < 0) {
+      return rv;
+    }
+    return nufs_getattr(path, st);
+  }
+  inode *desired_inode = get_inode(desired_inum);
 
-  printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
-         st->st_size);
-  return rv;
+  st->st_mode = desired_inode->mode;
+  st->st_size = desired_inode->size;
+  st->st_uid = getuid();
+}
+
+printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
+       st->st_size);
+return rv;
 }
 
 // implementation for: man 2 readdir
 // lists the contents of a directory
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi) {
+  printf("entered readdir\n");
   struct stat st;
   int rv;
 
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    rv = nufs_getattr("/", &st);
-    filler(buf, ".", &st, 0);
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (direntry_arr[ii].inum != 0) {
-        rv = nufs_getattr(direntry_arr[ii].name, &st);
-        filler(buf, get_filename_from_path(direntry_arr[ii].name), &st, 0);
-      }
+  // will return contents of leaf directory as linkedlist, just their names
+  slist *contents = directory_list(path);
+  while (contents) {
+    rv = nufs_getattr(contents->data, &st);
+    if (rv < 0) {
+      return rv;
     }
-
-  } else {
-    // non root path given
-    printf("non root path given\n");
-    return -1;
+    filler(buf, contents->data, &st, 0);
+    contents = contents->next;
   }
 
   printf("readdir(%s) -> %d\n", path, rv);
@@ -128,47 +97,47 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // mknod makes a filesystem object like a file or directory
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
-  int rv = -1;
-
-  inode *root_inode = get_root_inode();
-  void *root_data = pages_get_page(ROOT_PNUM);
-  direntry *direntry_arr = (direntry *)root_data;
-  int ii;
-  int not_found = 1;
-  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-    if (direntry_arr[ii].inum == 0) {
-      // 0 is reserved for root or uninitialzied, so we must have
-      // we have found an open direntry
-      not_found = 0;
-      break;
-    }
+  // TODO: ENOSPC handle out of space
+  // TODO: check mode to see if dir, if so, init dir
+  int rv = 0;
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
-  if (not_found) {
-    return -EDQUOT;
-  }
-  direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
-  int first_free_inum = alloc_inum();
-  if (first_free_inum == -1) {
-    return rv;
-  }
+  inode *parent_inode = get_inode(parent_inum);
 
-  first_empty_direntry->inum = first_free_inum;
-  strcat(first_empty_direntry->name, path);
-  root_inode->size += sizeof(direntry);
+  char *filename = get_filename_from_path(path);
 
-  inode *new_inode = get_inode(first_empty_direntry->inum);
+  // TODO: make sure alloc_inum works
+  int new_inum = alloc_inum();
+  // how does directory put init dirs vs files
+  rv = directory_put(parent_inode, filename, new_inum);
 
-  new_inode->mode = 100644;
-  new_inode->refs = 1;
-  new_inode->size = 0;
-  int first_free_pnum = alloc_page();
-  if (first_free_pnum == -1) {
-    printf("pnum error\n");
+  // TODO: use for directory put
+  // direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
+  // int first_free_inum = alloc_inum();
+  // if (first_free_inum == -1) {
+  //   return rv;
+  // }
 
-    return rv;
-  }
-  new_inode->ptrs[0] = first_free_pnum;
-  rv = 0;
+  // first_empty_direntry->inum = first_free_inum;
+  // strcat(first_empty_direntry->name, path);
+  // root_inode->size += sizeof(direntry);
+
+  // inode *new_inode = get_inode(first_empty_direntry->inum);
+
+  // new_inode->mode = 100644;
+  // new_inode->refs = 1;
+  // new_inode->size = 0;
+  // int first_free_pnum = alloc_page();
+  // if (first_free_pnum == -1) {
+  //   printf("pnum error\n");
+
+  //   return rv;
+  // }
+  // new_inode->ptrs[0] = first_free_pnum;
+  // rv = 0;
+
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
@@ -182,44 +151,35 @@ int nufs_mkdir(const char *path, mode_t mode) {
 }
 
 int nufs_unlink(const char *path) {
+  printf("entered unlink\n");
+  // TODO: handle symbolic links and hard links
   int rv = 0;
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    return -1;
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-    if (not_found) {
-      return -ENOENT;
-    }
-
-    direntry *desired_direntry = &direntry_arr[ii];
-
-    int desired_inum = desired_direntry->inum;
-    inode *desired_inode = &root_inode[desired_inum];
-
-    int desired_page_num = desired_inode->ptrs[0];
-
-    desired_inode->refs--;
-    if (desired_inode->refs == 0) {
-      // ERASING
-      free_page(desired_page_num);
-      free_inode(desired_inum);
-      memset(desired_direntry, 0, sizeof(direntry));
-    }
-
-    printf("unlink(%s) -> %d\n", path, rv);
-    return rv;
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+
+  int desired_page_num = desired_inode->ptrs[0];
+
+  desired_inode->refs--;
+  if (desired_inode->refs == 0) {
+    // ERASING
+    // TODO: directory delete
+    free_page(desired_page_num);
+    free_inode(desired_inum);
+    memset(desired_direntry, 0, sizeof(direntry));
+  }
+
+  printf("unlink(%s) -> %d\n", path, rv);
+  return rv;
+}
 }
 
 int nufs_link(const char *from, const char *to) {
@@ -243,41 +203,25 @@ int nufs_rename(const char *from, const char *to) {
 }
 
 int nufs_chmod(const char *path, mode_t mode) {
+  printf("entered chmod\n");
   int rv = 0;
-  inode *root_inode = get_root_inode();
-
-  if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode;  // directory
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      return -ENOENT;
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-    desired_inode->mode = mode;  //  0100644; // regular file
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode;
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
-
   return rv;
 }
 
 int nufs_truncate(const char *path, off_t size) {
-  // TODO: make sure works
   int rv = 0;
   printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
   return rv;
@@ -295,88 +239,55 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
+  printf("entered read\n");
   int rv = 0;
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    return -1;
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      if (ii == MAX_DIRENTRIES - 1) {
-        return -ENOSPC;
-      } else {
-        return -ENOENT;
-      }
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-
-    int desired_page_num = desired_inode->ptrs[0];
-    void *desired_data_block = pages_get_page(desired_page_num);
-    memcpy(buf, desired_data_block + offset, size);
-    rv = size;
-    printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-    return rv;
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  // TODO: handle multiple pages
+  int desired_page_num = desired_inode->ptrs[0];
+  void *desired_data_block = pages_get_page(desired_page_num);
+  memcpy(buf, desired_data_block + offset, size);
+  rv = size;
+  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  return rv;
+}
 }
 
 // Actually write data
 int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
-  int rv = -1;
-
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    return -1;
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      if (ii == MAX_DIRENTRIES - 1) {
-        return -ENOSPC;
-      } else {
-        return -ENOENT;
-      }
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-
-    int desired_page_num = desired_inode->ptrs[0];
-    void *desired_data_block = pages_get_page(desired_page_num);
-    memcpy(desired_data_block, buf, size);
-    desired_inode->size += size;
-    rv = size;
-
-    printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-    return rv;
+  printf("entered write\n");
+  int rv = 0;
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  // TODO: handle multiple pages
+  int desired_page_num = desired_inode->ptrs[0];
+  void *desired_data_block = pages_get_page(desired_page_num);
+  memcpy(desired_data_block, buf, size);
+  desired_inode->size += size;
+  rv = size;
+
+  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  return rv;
+}
 }
 
 // Update the timestamps on a file or directory.
