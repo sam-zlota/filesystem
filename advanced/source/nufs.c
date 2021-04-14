@@ -464,10 +464,10 @@ int main(int argc, char *argv[]) {
   // char *path = argv[--argc];
   // puts(path);
 
-  char *path = "/hi";
+  char *path = "/hi/";
   char *name = "hi";
 
-  printf("/hi -> %s\n", s_split(path, '/')->data);
+  printf("/hi/ -> %s\n", s_split(path, '/')->data);
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
