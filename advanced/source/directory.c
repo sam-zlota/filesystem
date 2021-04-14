@@ -55,12 +55,12 @@ int tree_lookup(const char* path) {
   slist* delim_path = s_split(strdup(path) + 1, '/');
   int curr_dir = 0;
 
-  printf("succesfully split\n");
   // This means that we are at the root node
   if (delim_path->next == NULL) {
     return 0;
   }
 
+  printf("got here\n");
   // Loop through the deliminated path, terminating only when you are the parent
   // of the last node in the list
   while (delim_path->next->next) {
