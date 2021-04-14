@@ -24,9 +24,6 @@
 #include "util.h"
 
 int ROOT_PNUM = -1;
-// a directory cannot have more than 64 entries
-// 78*sizeof(direntry) = 78*52 ~ 4096
-static int MAX_DIRENTRIES = 78;
 
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 // implementation for: man 2 access
