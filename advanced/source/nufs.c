@@ -109,77 +109,74 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   char *filename = get_filename_from_path(path);
 
   // TODO: make sure alloc_inum works
-  int new_inum = alloc_inum();
+  // int new_inum = alloc_inum();
+  // if(new_inum < 0) {
+  //   return -ENOSPC;
+  // }
   // how does directory put init dirs vs files
-  rv = directory_put(parent_inode, filename, new_inum);
+  // rv = directory_put(parent_inode, filename, new_inum);
 
-  // TODO: use for directory put
-  // direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
-  // int first_free_inum = alloc_inum();
-  // if (first_free_inum == -1) {
-  //   return rv;
-  // }
-
-  // first_empty_direntry->inum = first_free_inum;
-  // strcat(first_empty_direntry->name, path);
-  // root_inode->size += sizeof(direntry);
-
-  // inode *new_inode = get_inode(first_empty_direntry->inum);
-
-  // new_inode->mode = 100644;
-  // new_inode->refs = 1;
-  // new_inode->size = 0;
-  // int first_free_pnum = alloc_page();
-  // if (first_free_pnum == -1) {
-  //   printf("pnum error\n");
-
-  //   return rv;
-  // }
-  // new_inode->ptrs[0] = first_free_pnum;
-  // rv = 0;
-
-  printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-  return rv;
-}
-
-// most of the following callbacks implement
-// another system call; see section 2 of the manual
-int nufs_mkdir(const char *path, mode_t mode) {
-  int rv = nufs_mknod(path, mode | 040000, 0);
-  printf("mkdir(%s) -> %d\n", path, rv);
-  return rv;
-}
-
-int nufs_unlink(const char *path) {
-  printf("entered unlink\n");
-  // TODO: handle symbolic links and hard links
-  int rv = 0;
-  int parent_inum = tree_lookup(path);
-  if (parent_inum < 0) {
-    return parent_inum;
-  }
-  inode *parent_inode = get_inode(parent_inum);
-  char *filename = get_filename_from_path(path);
-  int desired_inum = directory_lookup(parent_inode, filename);
-  if (desired_inum < 0) {
-    return desired_inum;
-  }
-  inode *desired_inode = get_inode(desired_inum);
-
-  int desired_page_num = desired_inode->ptrs[0];
-
-  desired_inode->refs--;
-  if (desired_inode->refs == 0) {
-    // ERASING
-    // TODO: directory delete
-    free_page(desired_page_num);
-    free_inode(desired_inum);
-    memset(desired_direntry, 0, sizeof(direntry));
+  direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
+  int first_free_inum = alloc_inum();
+  if (first_free_inum == -1) {
+    return rv;
   }
 
-  printf("unlink(%s) -> %d\n", path, rv);
-  return rv;
-}
+  first_empty_direntry->inum = first_free_inum;
+  strcat(first_empty_direntry->name, path);
+  root_inode->size += sizeof(direntry);
+
+  inode *new_inode = get_inode(first_empty_direntry->inum);
+
+  new_inode->mode = 100644;
+  new_inode->refs = 1;
+  new_inode->size = 0;
+  int first_free_pnum = alloc_page();
+  if (first_free_pnum == -1) {
+    printf("pnum error\n");
+
+    printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
+    return rv;
+  }
+
+  // most of the following callbacks implement
+  // another system call; see section 2 of the manual
+  int nufs_mkdir(const char *path, mode_t mode) {
+    int rv = nufs_mknod(path, mode | 040000, 0);
+    printf("mkdir(%s) -> %d\n", path, rv);
+    return rv;
+  }
+
+  int nufs_unlink(const char *path) {
+    printf("entered unlink\n");
+    // TODO: handle symbolic links and hard links
+    int rv = 0;
+    int parent_inum = tree_lookup(path);
+    if (parent_inum < 0) {
+      return parent_inum;
+    }
+    inode *parent_inode = get_inode(parent_inum);
+    char *filename = get_filename_from_path(path);
+    int desired_inum = directory_lookup(parent_inode, filename);
+    if (desired_inum < 0) {
+      return desired_inum;
+    }
+    inode *desired_inode = get_inode(desired_inum);
+
+    int desired_page_num = desired_inode->ptrs[0];
+
+    desired_inode->refs--;
+    if (desired_inode->refs == 0) {
+      // ERASING
+      // TODO: directory delete
+      free_page(desired_page_num);
+      free_inode(desired_inum);
+      memset(desired_direntry, 0, sizeof(direntry));
+    }
+
+    printf("unlink(%s) -> %d\n", path, rv);
+    return rv;
+  }
 }
 
 int nufs_link(const char *from, const char *to) {
