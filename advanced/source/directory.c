@@ -8,7 +8,7 @@
 #include "slist.h"
 #include "util.h"
 
-static int IPTR_PAGE_SIZE = 4096/sizeof(int);
+static int IPTR_PAGE_SIZE = 4096 / sizeof(int);
 
 /*
 typedef struct direntry {
@@ -30,30 +30,33 @@ int directory_lookup(inode* dd, const char* name) {
   int ptr_index = -1;
 
   // You're asking me to lookup the root in the root, so just return the root
-  if (strcmp(name, "") == 0)
-  {
+  if (strcmp(name, "") == 0) {
     return 0;
   }
-  
+
   int page_index = dd->ptrs[0];
 
   while (1) {
     direntry* entries = (direntry*)pages_get_page(page_index);
 
     int ii = 0;
-    for (int ii = 0; ii < min(dd->size / sizeof(direntry) + 1, MAX_DIRENTRIES); ii++) {
+    for (int ii = 0; ii < min(dd->size / sizeof(direntry) + 1, MAX_DIRENTRIES);
+         ii++) {
       if (strcmp(entries[ii].name, name) == 0) {
         return entries[ii].inum;
       }
     }
 
-    // Enumerate out the possibilities for where our page index could be, starting from ptrs[0] and going onto the extra ptrs[] block
+    // Enumerate out the possibilities for where our page index could be,
+    // starting from ptrs[0] and going onto the extra ptrs[] block
     if (page_index == dd->ptrs[0] && dd->ptrs[1] != 0) {
       page_index = dd->ptrs[1];
     } else if (page_index == dd->ptrs[1] && dd->iptr != 0) {
       page_index = dd->iptr;
       ptr_index = 0;
-    } else if (ptr_index >= 0 && ptr_index < IPTR_PAGE_SIZE) { // TODO this needs to be fixed, later
+    } else if (ptr_index >= 0 &&
+               ptr_index <
+                   IPTR_PAGE_SIZE) {  // TODO this needs to be fixed, later
       ptr_index++;
       page_index = ptr_index + page_index;
     } else {

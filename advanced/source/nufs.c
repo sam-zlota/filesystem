@@ -119,6 +119,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // TODO: ENOSPC handle out of space
   // TODO: check mode to see if dir, if so, init dir
+  printf("called mknod\n");
   int rv = 0;
   // int parent_inum = tree_lookup(path);
   // if (parent_inum < 0) {
