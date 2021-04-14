@@ -43,6 +43,8 @@ int nufs_getattr(const char *path, struct stat *st) {
   memset(st, 0, sizeof(stat));
 
   int parent_inum = tree_lookup(path);
+
+  printf("successful tree lookup\n");
   if (parent_inum < 0) {
     return parent_inum;
   }
