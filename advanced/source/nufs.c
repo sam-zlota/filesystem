@@ -245,25 +245,17 @@ int nufs_rename(const char *from, const char *to) {
 }
 
 int nufs_chmod(const char *path, mode_t mode) {
+  printf("entered chmod\n");
   int rv = 0;
-
-
-
-
-    int parent_inum = tree_lookup(path);
-    if(parent_inum < 0) {
-      return parent_inum;
-    }
-    inode* parent_inode = get_inode(parent_inum);
-    char* filename = get_filename_from_path(path);
-    int desired_inum = directory_lookup(parent_inode, filename);
-    if(desired_inum < 0) {
-      return desired_inum;
-    }
-    desired_inode->mode = mode;  //  0100644; // regular file
-  
+  int parent_inum = tree_lookup(path);
+  if(parent_inum < 0) {return parent_inum;}
+  inode* parent_inode = get_inode(parent_inum);
+  char* filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if(desired_inum < 0) {return desired_inum;}
+  inode* desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode; 
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
-
   return rv;
 }
 
@@ -287,34 +279,19 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
   int rv = 0;
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    return -1;
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
 
-    int ii;
-    int not_found = 1;
-    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
 
-    if (not_found) {
-      if (ii == MAX_DIRENTRIES - 1) {
-        return -ENOSPC;
-      } else {
-        return -ENOENT;
-      }
-    }
+  printf("entered read\n");
+  int rv = 0;
+  int parent_inum = tree_lookup(path);
+  if(parent_inum < 0) {return parent_inum;}
+  inode* parent_inode = get_inode(parent_inum);
+  char* filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if(desired_inum < 0) {return desired_inum;}
+  inode* desired_inode = get_inode(desired_inum);
+  
 
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
 
     int desired_page_num = desired_inode->ptrs[0];
     void *desired_data_block = pages_get_page(desired_page_num);
