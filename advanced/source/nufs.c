@@ -47,51 +47,30 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   memset(st, 0, sizeof(stat));
 
-  inode *root_inode = get_root_inode();
-  if (strcmp(path, "/") == 0) {
-    st->st_mode = root_inode->mode;
-    st->st_size = root_inode->size;
-    st->st_uid = getuid();
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-    // only handling files in root directory
-    // so we can just ignore first character "/"
-    // and assume the rest is the filename
-
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      if (ii == MAX_DIRENTRIES - 1) {
-        return -ENOSPC;
-      } else {
-        nufs_mknod(path, 0100644, 0);
-      }
-      return nufs_getattr(path, st);
-    }
-
-    // we found the dir entry we were looking for at index ii
-    direntry desired_direntry = direntry_arr[ii];
-
-    // getting the inode for this dir entry
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-
-    st->st_mode = desired_inode->mode;
-    st->st_size = desired_inode->size;
-    st->st_uid = getuid();
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
   }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    rv = nufs_mknod(path, 0100644, 0);
+    if (rv < 0) {
+      return rv;
+    }
+    return nufs_getattr(path, st);
+  }
+  inode *desired_inode = get_inode(desired_inum);
 
-  printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
-         st->st_size);
-  return rv;
+  st->st_mode = desired_inode->mode;
+  st->st_size = desired_inode->size;
+  st->st_uid = getuid();
+}
+
+printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
+       st->st_size);
+return rv;
 }
 
 // implementation for: man 2 readdir
@@ -120,6 +99,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // mknod makes a filesystem object like a file or directory
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
+  // TODO: ENOSPC handle out of space
   // TODO: check mode to see if dir, if so, init dir
   int rv = 0;
   int parent_inum = tree_lookup(path);
