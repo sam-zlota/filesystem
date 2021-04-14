@@ -25,14 +25,27 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
-  direntry* entries = (direntry*)pages_get_page(dd->ptrs[0]);
+  int ptr_index = 0; // We want to do the same operation for ptrs[0] and ptrs[1]
+  while (ptr_index < 2)
+  {
+    direntry* entries = (direntry*)pages_get_page(dd->ptrs[0]);
 
-  int ii = 0;
-  while (ii < min(dd->size/sizeof(direntry), MAX_DIRENTRIES)) {
-    if (strcmp(entries[ii].name, name) == 0) {
-      return entries[ii].inum;
+    int ii = 0;
+    while (ii < min(dd->size/sizeof(direntry), MAX_DIRENTRIES)) {
+      if (strcmp(entries[ii].name, name) == 0) {
+        return entries[ii].inum;
+      }
+      ii++;
     }
-    ii++;
+
+    if (dd->ptrs[ptr_index + 1] != NULL)
+    {
+      ptr_index++;
+    }
+    else
+    {
+      break;
+    }
   }
 
   return -1;
