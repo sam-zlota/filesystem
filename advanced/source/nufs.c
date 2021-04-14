@@ -337,7 +337,6 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
-}
 
 // Update the timestamps on a file or directory.
 int nufs_utimens(const char *path, const struct timespec ts[2]) {
