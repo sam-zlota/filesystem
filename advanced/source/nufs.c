@@ -39,7 +39,7 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-
+  printf("entered gettattr\n");
   memset(st, 0, sizeof(stat));
 
   int parent_inum = tree_lookup(path);
