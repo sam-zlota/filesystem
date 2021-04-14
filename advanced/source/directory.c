@@ -78,7 +78,7 @@ int tree_lookup(const char* path) {
 
   // Loop through the deliminated path, terminating only when you are the parent
   // of the last node in the list
-  while (delim_path->next->next) {
+  while (delim_path->next->next != NULL) {
     curr_dir = directory_lookup(get_inode(curr_dir), delim_path->data);
     delim_path = delim_path->next;
   }
