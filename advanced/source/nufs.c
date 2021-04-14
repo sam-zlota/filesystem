@@ -50,7 +50,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
   inode *parent_inode = get_inode(parent_inum);
   char *filename = get_filename_from_path(path);
-  int desired_inum = directory_lookup(parent_inode, filename);
+  int desired_inum = directory_lookup(parent_inode, git );
   if (desired_inum < 0) {
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
   // char *path = argv[--argc];
   // puts(path);
 
-  char *path = "/hi";
+  char *path = "/";
   char *name = "hi";
   slist *split = s_split(path, '/');
   printf("/hi ->\n");
