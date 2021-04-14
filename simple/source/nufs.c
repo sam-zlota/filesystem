@@ -246,40 +246,19 @@ int nufs_rename(const char *from, const char *to) {
 
 int nufs_chmod(const char *path, mode_t mode) {
   int rv = 0;
-  inode *root_inode = get_root_inode();
 
-  if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode;  // directory
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      return -ENOENT;
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-    inode *desired_inode = &root_inode[desired_inum];
-    desired_inode->mode = mode;  //  0100644; // regular file
+  int desired_inum = tree_lookup(path);
+  if(desired_inum < 0)  {
+    //error
+    return desired_inum;
   }
+  inode* desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode;
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
-
   return rv;
 }
 
 int nufs_truncate(const char *path, off_t size) {
-  // TODO: make sure works
   int rv = 0;
   printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
   return rv;
@@ -326,6 +305,21 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
     int desired_inum = desired_direntry.inum;
     inode *desired_inode = &root_inode[desired_inum];
+
+      int rv = 0;
+
+  int desired_inum = tree_lookup(path);
+  if(desired_inum < 0)  {
+    //error
+    return desired_inum;
+  }
+  inode* desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode;
+  printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
+  return rv;
+
+
+
 
     int desired_page_num = desired_inode->ptrs[0];
     void *desired_data_block = pages_get_page(desired_page_num);
