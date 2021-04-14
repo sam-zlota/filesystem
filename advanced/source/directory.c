@@ -57,10 +57,10 @@ int tree_lookup(const char* path) {
 
   // This means that we are at the root node
   if (delim_path->next == NULL) {
+    printf("returning zero\n");
     return 0;
   }
 
-  printf("got here\n");
   // Loop through the deliminated path, terminating only when you are the parent
   // of the last node in the list
   while (delim_path->next->next) {
