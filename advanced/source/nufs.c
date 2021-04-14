@@ -467,8 +467,9 @@ int main(int argc, char *argv[]) {
   char *path = "/hi/";
   char *name = "hi";
   slist *split = s_split(path, '/');
+  printf("/hi/ ->\n");
   while (split) {
-    printf("/hi/ -> %s\n", split->data);
+    printf("\t - %s\n", split->data);
     split = split->next;
   }
   pages_init(argv[--argc]);
