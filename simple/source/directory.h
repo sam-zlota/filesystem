@@ -26,37 +26,6 @@ void print_directory(inode* dd);
 
 
 
-int tree_lookup(const char* path) {
-  //return inum
-  
-  inode *root_inode = get_root_inode();
 
-  if (strcmp(path, "/") == 0) {
-    root_inode->mode = mode;  // directory
-  } else {
-    void *root_block = pages_get_page(ROOT_PNUM);
-    direntry *direntry_arr = (direntry *)root_block;
-
-    int ii;
-    int not_found = 1;
-    for (ii = 0; ii < MAX_DIRENTRIES; ii++) {
-      if (strcmp(path, direntry_arr[ii].name) == 0) {
-        not_found = 0;
-        break;
-      }
-    }
-
-    if (not_found) {
-      return -ENOENT;
-    }
-
-    direntry desired_direntry = direntry_arr[ii];
-
-    int desired_inum = desired_direntry.inum;
-   
-  }
-
-
-}
 
 #endif
