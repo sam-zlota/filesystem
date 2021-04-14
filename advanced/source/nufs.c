@@ -466,8 +466,10 @@ int main(int argc, char *argv[]) {
 
   char *path = "/hi/";
   char *name = "hi";
-
-  printf("/hi/ -> %s\n", s_split(path, '/')->data);
+  slist *split = s_split(path, '/');
+  while (split) {
+    printf("/hi/ -> %s\n", split->data);
+  }
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
