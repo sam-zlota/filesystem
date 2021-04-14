@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
   char *path = "/hi";
   char *name = "hi";
 
-  assert(strcmp(s_split(path, '/')->data, name) == 0);
+  printf("/hi -> %s\n", s_split(path, '/')->data);
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
