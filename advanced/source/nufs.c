@@ -102,7 +102,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
       if (direntry_arr[ii].inum != 0) {
         direntry *desired_direntry = (direntry *)&direntry_arr[ii];
         char *path_name = strdup(desired_direntry->name);
-        strcat(path_name, "/");
+        strcat("/", path_name);
         rv = nufs_getattr(path_name, &st);
         filler(buf, direntry_arr[ii].name, &st, 0);
       }
