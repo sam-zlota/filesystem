@@ -25,25 +25,22 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
-  int ptr_index = 0; // We want to do the same operation for ptrs[0] and ptrs[1]
-  while (ptr_index < 2)
-  {
+  int ptr_index =
+      0;  // We want to do the same operation for ptrs[0] and ptrs[1]
+  while (ptr_index < 2) {
     direntry* entries = (direntry*)pages_get_page(dd->ptrs[0]);
 
     int ii = 0;
-    while (ii < min(dd->size/sizeof(direntry), MAX_DIRENTRIES)) {
+    while (ii < min(dd->size / sizeof(direntry), MAX_DIRENTRIES)) {
       if (strcmp(entries[ii].name, name) == 0) {
         return entries[ii].inum;
       }
       ii++;
     }
 
-    if (dd->ptrs[ptr_index + 1] != NULL)
-    {
+    if (dd->ptrs[ptr_index + 1] != NULL) {
       ptr_index++;
-    }
-    else
-    {
+    } else {
       break;
     }
   }
@@ -74,25 +71,21 @@ int tree_lookup(const char* path) {
 // Get the first free entry in the given directory block
 direntry* first_free_entry_in_block(int pnum) {
   direntry* page = (direntry*)pages_get_page(pnum);
-  
+
   int ii = 0;
 
-  while (ii < PAGE_SIZE)
-  {
+  while (ii < PAGE_SIZE) {
     page[ii];
   }
 
   return 0;
 }
 
-direntry* first_free_entry(inode* dd) {
-  return 0;
-}
+direntry* first_free_entry(inode* dd) { return 0; }
 
 // Puts an inum with the given name in the given parent directory, returning the
 // new directory's inum
 int directory_put(inode* dd, const char* name, int inum) {
-
   // direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
   // int first_free_inum = alloc_inum();
   // if (first_free_inum == -1) {
