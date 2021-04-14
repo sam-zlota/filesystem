@@ -111,7 +111,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // }
   // how does directory put init dirs vs files
   // rv = directory_put(parent_inode, filename, new_inum);
-
+  inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(ROOT_PNUM);
   direntry *direntry_arr = (direntry *)root_data;
   int ii;
