@@ -97,46 +97,60 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // TODO: ENOSPC handle out of space
   // TODO: check mode to see if dir, if so, init dir
   int rv = 0;
-  int parent_inum = tree_lookup(path);
-  if (parent_inum < 0) {
-    return parent_inum;
-  }
-  inode *parent_inode = get_inode(parent_inum);
+  // int parent_inum = tree_lookup(path);
+  // if (parent_inum < 0) {
+  //   return parent_inum;
+  // }
+  // inode *parent_inode = get_inode(parent_inum);
 
-  char *filename = get_filename_from_path(path);
+  // char *filename = get_filename_from_path(path);
 
   // TODO: make sure alloc_inum works
-  int new_inum = alloc_inum();
+  // int new_inum = alloc_inum();
+  // if(new_inum < 0) {
+  //   return -ENOSPC;
+  // }
   // how does directory put init dirs vs files
-  rv = directory_put(parent_inode, filename, new_inum);
+  // rv = directory_put(parent_inode, filename, new_inum);
 
-  // TODO: use for directory put
-  // direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
-  // int first_free_inum = alloc_inum();
-  // if (first_free_inum == -1) {
-  //   return rv;
-  // }
+  void *root_data = pages_get_page(ROOT_PNUM);
+  direntry *direntry_arr = (direntry *)root_data;
+  int ii;
+  int not_found = 1;
+  for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+    if (direntry_arr[ii].inum == 0) {
+      // 0 is reserved for root or uninitialzied, so we must have
+      // we have found an open direntry
+      not_found = 0;
+      break;
+    }
+  }
+  if (not_found) {
+    return -EDQUOT;
+  }
 
-  // first_empty_direntry->inum = first_free_inum;
-  // strcat(first_empty_direntry->name, path);
-  // root_inode->size += sizeof(direntry);
+  direntry *first_empty_direntry = (direntry *)&direntry_arr[ii];
+  int first_free_inum = alloc_inum();
+  if (first_free_inum == -1) {
+    return rv;
+  }
 
-  // inode *new_inode = get_inode(first_empty_direntry->inum);
+  first_empty_direntry->inum = first_free_inum;
+  strcat(first_empty_direntry->name, path);
+  root_inode->size += sizeof(direntry);
 
-  // new_inode->mode = 100644;
-  // new_inode->refs = 1;
-  // new_inode->size = 0;
-  // int first_free_pnum = alloc_page();
-  // if (first_free_pnum == -1) {
-  //   printf("pnum error\n");
+  inode *new_inode = get_inode(first_empty_direntry->inum);
 
-  //   return rv;
-  // }
-  // new_inode->ptrs[0] = first_free_pnum;
-  // rv = 0;
+  new_inode->mode = 100644;
+  new_inode->refs = 1;
+  new_inode->size = 0;
+  int first_free_pnum = alloc_page();
+  if (first_free_pnum == -1) {
+    printf("pnum error\n");
 
-  printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-  return rv;
+    printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
+    return rv;
+  }
 }
 
 // most of the following callbacks implement
