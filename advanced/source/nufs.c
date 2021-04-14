@@ -464,8 +464,8 @@ int main(int argc, char *argv[]) {
   // char *path = argv[--argc];
   // puts(path);
 
-  char *path = {'/', 'h', 'i', '\0'};
-  char *name = {'/', 'h', 'i', '\0'};
+  char *path = "/hi";
+  char *name = "hi";
 
   assert(strcmp(s_split(path, '/')->data, name) == 0);
   pages_init(argv[--argc]);
