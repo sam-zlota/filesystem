@@ -60,6 +60,7 @@ int directory_lookup(inode* dd, const char* name) {
       ptr_index++;
       page_index = ptr_index + page_index;
     } else {
+      printf("breaking dir lookup\n");
       break;
     }
   }
