@@ -244,7 +244,6 @@ int nufs_chmod(const char *path, mode_t mode) {
 }
 
 int nufs_truncate(const char *path, off_t size) {
-  // TODO: make sure works
   int rv = 0;
   printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
   return rv;
