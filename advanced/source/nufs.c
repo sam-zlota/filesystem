@@ -52,6 +52,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
   if (desired_inum < 0) {
+    printf("desired inum < 0\n");
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
       return rv;
