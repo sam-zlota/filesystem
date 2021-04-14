@@ -39,10 +39,12 @@ int nufs_access(const char *path, int mask) {
 // gets an object's attributes (type, permissions, size, etc)
 int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
-
+  printf("entered gettattr\n");
   memset(st, 0, sizeof(stat));
 
   int parent_inum = tree_lookup(path);
+
+  printf("successful tree lookup\n");
   if (parent_inum < 0) {
     return parent_inum;
   }
@@ -75,15 +77,37 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct stat st;
   int rv;
 
-  // will return contents of leaf directory as linkedlist, just their names
-  slist *contents = directory_list(path);
-  while (contents) {
-    rv = nufs_getattr(contents->data, &st);
-    if (rv < 0) {
-      return rv;
+  // // will return contents of leaf directory as linkedlist, just their names
+  // slist *contents = directory_list(path);
+  // while (contents) {
+  //   rv = nufs_getattr(contents->data, &st);
+  //   if (rv < 0) {
+  //     return rv;
+  //   }
+  //   filler(buf, contents->data, &st, 0);
+  //   contents = contents->next;
+  // }
+
+  inode *root_inode = get_root_inode();
+  if (strcmp(path, "/") == 0) {
+    rv = nufs_getattr("/", &st);
+    filler(buf, ".", &st, 0);
+    void *root_block = pages_get_page(ROOT_PNUM);
+    direntry *direntry_arr = (direntry *)root_block;
+
+    int ii;
+    int not_found = 1;
+    for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
+      if (direntry_arr[ii].inum != 0) {
+        rv = nufs_getattr(direntry_arr[ii].name, &st);
+        filler(buf, get_filename_from_path(direntry_arr[ii].name), &st, 0);
+      }
     }
-    filler(buf, contents->data, &st, 0);
-    contents = contents->next;
+
+  } else {
+    // non root path given
+    printf("non root path given\n");
+    return -1;
   }
 
   printf("readdir(%s) -> %d\n", path, rv);
