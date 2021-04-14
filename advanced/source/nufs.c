@@ -469,6 +469,7 @@ int main(int argc, char *argv[]) {
   slist *split = s_split(path, '/');
   while (split) {
     printf("/hi/ -> %s\n", split->data);
+    split = split->next;
   }
   pages_init(argv[--argc]);
   init_root();
