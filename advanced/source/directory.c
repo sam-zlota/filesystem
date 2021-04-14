@@ -41,11 +41,10 @@ int directory_lookup(inode* dd, const char* name) {
     direntry* entries = (direntry*)pages_get_page(page_index);
 
     int ii = 0;
-    while (ii < min(dd->size / sizeof(direntry), MAX_DIRENTRIES)) {
+    for (int ii = 0; ii < min(dd->size / sizeof(direntry) + 1, MAX_DIRENTRIES); ii++) {
       if (strcmp(entries[ii].name, name) == 0) {
         return entries[ii].inum;
       }
-      ii++;
     }
 
     // Enumerate out the possibilities for where our page index could be, starting from ptrs[0] and going onto the extra ptrs[] block
