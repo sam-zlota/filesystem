@@ -37,6 +37,7 @@ int find_in_block(int pnum, const char* name) {
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (strcmp(curr_dirent->name, name) == 0) {
+      printf("FOUND in block\n");
       return ii;
     }
     ii++;
@@ -56,6 +57,8 @@ int directory_lookup(inode* dd, const char* name) {
   // this handles the case "" is given
   if (strcmp("\0", name) == 0) {
     // it means we want
+    printf("exited directory lookup: success, found empty\n");
+
     return 0;
   }
 
@@ -68,6 +71,8 @@ int directory_lookup(inode* dd, const char* name) {
 
     if (curr_pnum == 0) {
       // have reached end
+      printf("exited directory lookup: failure -ENONET\n");
+
       return -ENOENT;
     }
     iptr_index++;
@@ -76,6 +81,7 @@ int directory_lookup(inode* dd, const char* name) {
   int direntry_index = find_in_block(curr_pnum, name);
   direntry* curr_directory = pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
+  printf("exited directory lookup: success\n");
   return desired_direntry->inum;
 }
 
