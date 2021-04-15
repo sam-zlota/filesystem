@@ -155,10 +155,10 @@ int directory_put(inode* dd, const char* name, int inum) {
 }
 
 // helper to determine if the inode should free this block
-int is_block_empty(int pnum, int starting_index) {
+int is_block_empty(int pnum) {
   direntry* block = (direntry*)pages_get_page(pnum);
 
-  int ii = starting_index;
+  int ii = 0;
 
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
@@ -203,7 +203,7 @@ int directory_delete(inode* dd, const char* name) {
   assert(desired_direntry->inum == 0);
 
   // check to see if any more
-  if (is_block_empty(curr_pnum, 2)) {
+  if (is_block_empty(curr_pnum)) {
     printf("calling inode shrink from directory delete\n");
     // inode_shrink();
   }
