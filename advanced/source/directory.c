@@ -116,7 +116,7 @@ int first_free_entry_in_block(int pnum) {
   direntry* page = (direntry*)pages_get_page(pnum);
   int ii = 0;
   while (ii < MAX_DIRENTRIES) {
-    if (page[ii].inum == 0 && pnum != 2) {
+    if (page[ii].inum == 0 && pnum != 2 && ii > 0) {
       return ii;
     }
     ii++;
