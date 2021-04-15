@@ -3,6 +3,7 @@
 #include "inode.h"
 
 #include "pages.h"
+#include "bitmap.h"
 
 // typedef struct inode {
 //   int refs;     // reference count
@@ -29,3 +30,49 @@ inode *get_root_inode() {
 }
 
 inode *get_inode(int inum) { return get_root_inode() + inum; }
+
+// Grows the inode to the given size
+// Returns 0 if successful, -1 if not
+int grow_inode(inode* node, int size)
+{
+  node->size += size;
+
+  // This variable represents how much more space we've allocated for the inode. When this number is >= size, then we know we should return 0.
+  int newly_allocated_space = 0;
+
+  if (node->size > PAGE_SIZE && node->ptrs[1] == NULL)
+  {
+    node->ptrs[1] = alloc_page();
+    newly_allocated_space += PAGE_SIZE;
+  }
+  
+  if (node->size > 2*PAGE_SIZE)
+  {
+    // Check to see if we need to create the iptr
+    if (node->iptr == NULL)
+    {
+      node->iptr = alloc_page();
+    }
+
+    // Find where the next pointer should go
+    for (int ii = 0; ii < PAGE_SIZE/sizeof(int); ii++)
+    {
+      // If we still haven't allocated enough at this point
+      if (size > newly_allocated_space)
+      {
+        memcpy((int*)pages_get_page(node->iptr) + ii, alloc_page(), sizeof(int));
+
+        // Now check if size is <= newly_allocated_space
+        if (size <= newly_allocated_space)
+        {
+          return 0;
+        }
+      }
+    }
+
+    // If we haven't returned yet, we're out of space
+    return -1;
+  }
+
+  return 0;
+}
