@@ -2,11 +2,11 @@
 
 #include "inode.h"
 
-#include "bitmap.h"
-#include "pages.h"
-
 #include <stdio.h>
 #include <string.h>
+
+#include "bitmap.h"
+#include "pages.h"
 
 // typedef struct inode {
 //   int refs;     // reference count
@@ -60,8 +60,7 @@ int grow_inode(inode *node, int size) {
       // If we still haven't allocated enough at this point
       if (size > newly_allocated_space) {
         int pnum = alloc_page();
-        memcpy((int *)pages_get_page(node->iptr) + ii, &pnum,
-               sizeof(int));
+        memcpy((int *)pages_get_page(node->iptr) + ii, &pnum, sizeof(int));
 
         // Now check if size is <= newly_allocated_space
         if (size <= newly_allocated_space) {

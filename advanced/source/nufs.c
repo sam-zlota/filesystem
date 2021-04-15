@@ -61,7 +61,15 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   inode *parent_inode = get_inode(parent_inum);
   char *filename = get_filename_from_path(path);
+  printf("looking for filename: %s in directory with inode: %ld\n", filename,
+         parent_inum);
+
   int desired_inum = directory_lookup(parent_inode, filename);
+
+  if (desired_inum == 0) {
+    // will return zero if given curr directory
+    desired_inum += parent_inum;
+  }
 
   if (desired_inum < 0) {
     // TODO: handle adding directories
@@ -167,6 +175,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 // most of the following callbacks implement
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode) {
+  printf("called mkdir\n");
   int rv = nufs_mknod(path, mode | 040000, 0);
   // TODO: should we call dir init here? or in mknod
   printf("mkdir(%s) -> %d\n", path, rv);
