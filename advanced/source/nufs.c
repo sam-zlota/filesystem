@@ -94,9 +94,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   inode *root_inode = get_root_inode();
 
-
   if (strcmp(path, "/") == 0) {
-
     rv = nufs_getattr("/", &st);
     filler(buf, ".", &st, 0);
     void *root_block = pages_get_page(ROOT_PNUM);
