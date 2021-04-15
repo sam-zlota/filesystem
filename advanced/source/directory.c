@@ -39,6 +39,7 @@ int find_in_block(int pnum, const char* name) {
     if (strcmp(curr_dirent->name, name) == 0) {
       return ii;
     }
+    ii++;
   }
   return -1;
 }
@@ -109,6 +110,7 @@ int first_free_entry_in_block(int pnum) {
     if (page[ii].inum == 0 && pnum != 2) {
       return ii;
     }
+    ii++;
   }
   return -1;
 }
@@ -165,6 +167,7 @@ int is_block_empty(int pnum) {
     if (curr_dirent->inum > 0) {
       return 0;
     }
+    ii++;
   }
   return 1;
 }
@@ -225,6 +228,7 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
       // TODO: handle root
       contents = s_cons(curr_dirent->name, contents);
     }
+    ii++;
   }
   printf("exiting cons page\n");
   return contents;
