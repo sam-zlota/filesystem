@@ -42,23 +42,20 @@ int nufs_getattr(const char *path, struct stat *st) {
   int rv = 0;
   printf("entered gettattr\n");
   memset(st, 0, sizeof(stat));
-
   int parent_inum = tree_lookup(path);
-
   if (parent_inum < 0) {
-    return parent_inum;
+    printf("getattr exited: failure, parent inum") return parent_inum;
   }
 
   inode *parent_inode = get_inode(parent_inum);
-
   char *filename = get_filename_from_path(path);
-
   int desired_inum = directory_lookup(parent_inode, filename);
 
   if (desired_inum < 0) {
+    // TODO: handle adding directories
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
-      return rv;
+      printf("getattr exited: failure, mknod") return rv;
     }
     return nufs_getattr(path, st);
   }
