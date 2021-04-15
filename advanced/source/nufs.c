@@ -68,7 +68,8 @@ int nufs_getattr(const char *path, struct stat *st) {
     // I guess we only make directories with mkdir
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
-      printf("getattr exited: failure, mknod") return rv;
+      printf("getattr exited: failure, mknod");
+      return rv;
     }
     return nufs_getattr(path, st);
   }
@@ -147,9 +148,9 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   parent_inode->size += sizeof(direntry);
   // TODO: directory size is it the sum of the size of its contents?
 
-  inode *new_inode = get_inode(new_inum;
+  inode *new_inode = get_inode(new_inum);
 
-  //TODO: check mode, and then call dir init if we are making a directory
+  // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = 100644;
   new_inode->refs = 1;
   new_inode->size = 0;
