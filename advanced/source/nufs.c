@@ -44,13 +44,16 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   int parent_inum = tree_lookup(path);
 
-  printf("successful tree lookup\n");
   if (parent_inum < 0) {
     return parent_inum;
   }
+
   inode *parent_inode = get_inode(parent_inum);
+
   char *filename = get_filename_from_path(path);
+
   int desired_inum = directory_lookup(parent_inode, filename);
+
   if (desired_inum < 0) {
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
@@ -58,6 +61,7 @@ int nufs_getattr(const char *path, struct stat *st) {
     }
     return nufs_getattr(path, st);
   }
+
   inode *desired_inode = get_inode(desired_inum);
 
   st->st_mode = desired_inode->mode;
@@ -89,18 +93,26 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   // }
 
   inode *root_inode = get_root_inode();
+
+
   if (strcmp(path, "/") == 0) {
+
     rv = nufs_getattr("/", &st);
     filler(buf, ".", &st, 0);
     void *root_block = pages_get_page(ROOT_PNUM);
+
     direntry *direntry_arr = (direntry *)root_block;
 
     int ii;
     int not_found = 1;
     for (ii = 1; ii < MAX_DIRENTRIES; ii++) {
       if (direntry_arr[ii].inum != 0) {
-        rv = nufs_getattr(direntry_arr[ii].name, &st);
-        filler(buf, get_filename_from_path(direntry_arr[ii].name), &st, 0);
+        direntry *desired_direntry = (direntry *)&direntry_arr[ii];
+        char path_name[10];
+        strcpy(path_name, "/");
+        strcat(path_name, desired_direntry->name);
+        rv = nufs_getattr(path_name, &st);
+        filler(buf, direntry_arr[ii].name, &st, 0);
       }
     }
 
@@ -119,6 +131,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // TODO: ENOSPC handle out of space
   // TODO: check mode to see if dir, if so, init dir
+  printf("called mknod\n");
   int rv = 0;
   // int parent_inum = tree_lookup(path);
   // if (parent_inum < 0) {
@@ -135,6 +148,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // }
   // how does directory put init dirs vs files
   // rv = directory_put(parent_inode, filename, new_inum);
+
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(ROOT_PNUM);
   direntry *direntry_arr = (direntry *)root_data;
@@ -159,7 +173,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   }
 
   first_empty_direntry->inum = first_free_inum;
-  strcat(first_empty_direntry->name, path);
+  strcat(first_empty_direntry->name, get_filename_from_path(path));
   root_inode->size += sizeof(direntry);
 
   inode *new_inode = get_inode(first_empty_direntry->inum);
@@ -170,10 +184,11 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
     printf("pnum error\n");
-
-    printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-    return rv;
+    return first_free_pnum;
   }
+
+  printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
+  return rv;
 }
 
 // most of the following callbacks implement
@@ -464,14 +479,14 @@ int main(int argc, char *argv[]) {
   // char *path = argv[--argc];
   // puts(path);
 
-  char *path = "/";
-  char *name = "hi";
-  slist *split = s_split(path, '/');
-  printf("/hi ->\n");
-  while (split) {
-    printf("\t - %s\n", split->data);
-    split = split->next;
-  }
+  // char *path = "/";
+  // char *name = "hi";
+  // slist *split = s_split(path, '/');
+  // printf("/hi ->\n");
+  // while (split) {
+  //   printf("\t - %s\n", split->data);
+  //   split = split->next;
+  // }
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
