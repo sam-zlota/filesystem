@@ -64,7 +64,7 @@ int directory_lookup(inode* dd, const char* name) {
       ptr_index = 0;
     } else if (ptr_index >= 0 &&
                ptr_index <
-                   IPTR_PAGE_SIZE) {  /
+                   IPTR_PAGE_SIZE) {  
       ptr_index++;
       page_index = *(((int *) pages_get_page(dd->iptr)) + ptr_index);
       //TODO:
