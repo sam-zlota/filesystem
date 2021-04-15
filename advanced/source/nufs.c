@@ -44,21 +44,24 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   int parent_inum = tree_lookup(path);
 
-  printf("successful tree lookup\n");
   if (parent_inum < 0) {
     return parent_inum;
   }
+
   inode *parent_inode = get_inode(parent_inum);
+
   char *filename = get_filename_from_path(path);
+
   int desired_inum = directory_lookup(parent_inode, filename);
+
   if (desired_inum < 0) {
-    printf("desired inum < 0\n");
     rv = nufs_mknod(path, 0100644, 0);
     if (rv < 0) {
       return rv;
     }
     return nufs_getattr(path, st);
   }
+
   inode *desired_inode = get_inode(desired_inum);
 
   st->st_mode = desired_inode->mode;
@@ -90,10 +93,14 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   // }
 
   inode *root_inode = get_root_inode();
+
+
   if (strcmp(path, "/") == 0) {
+
     rv = nufs_getattr("/", &st);
     filler(buf, ".", &st, 0);
     void *root_block = pages_get_page(ROOT_PNUM);
+
     direntry *direntry_arr = (direntry *)root_block;
 
     int ii;
@@ -141,6 +148,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   // }
   // how does directory put init dirs vs files
   // rv = directory_put(parent_inode, filename, new_inum);
+
   inode *root_inode = get_root_inode();
   void *root_data = pages_get_page(ROOT_PNUM);
   direntry *direntry_arr = (direntry *)root_data;
@@ -177,9 +185,11 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   if (first_free_pnum == -1) {
     printf("pnum error\n");
 
-    printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-    return rv;
+   
   }
+
+   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
+    return rv;
 }
 
 // most of the following callbacks implement
