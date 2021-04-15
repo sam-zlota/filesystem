@@ -103,44 +103,96 @@ int tree_lookup(const char* path) {
 
 // Helper function for first_free_entry
 // Get the first free entry in the given directory block
-direntry* first_free_entry_in_block(int pnum) {
+int first_free_entry_in_block(int pnum) {
   direntry* page = (direntry*)pages_get_page(pnum);
 
   int ii = 0;
 
-  while (ii < PAGE_SIZE) {
-    if (page[ii].inum == 0) {
-      return &page[ii];
+  while (ii < MAX_DIRENTRIES) {
+    if (page[ii].inum == 0 && pnum != 2) {
+      return ii;
     }
   }
 
-  return NULL;
+  return -1;
 }
 
 // Gets the first free entry at a given inode
 direntry* first_free_entry(inode* dd) {
-  direntry* dirent = first_free_entry_in_block(dd->ptrs[0]);
-  if (dirent != NULL) {
-    return dirent;
-  }
+  int rv = 0;
 
+  rv = first_free_entry_in_block(dd->ptrs[0]);
+
+
+  if (rv > 0) {
+    return &(((direntry*)pages_get_page(dd->ptrs[0]))[rv]);
+  }
   // So it didn't pan out for ptrs[0]... Let's see if it's in ptrs[1]
   if (dd->ptrs[1] == 0) // First check that there's anything in ptrs[1]
   {
     // Grow ptrs[1] if it turns out that there's nothing in it
     // Getting to this point in the code means that ptrs[1] is full
-    grow_inode(dd, sizeof(direntry));
-  }
-  dirent = first_free_entry_in_block(dd->ptrs[1]);
-  if (dirent != NULL) {
-    return dirent;
+
+    rv = grow_inode(dd, sizeof(direntry));
+    if(rv < 0) {
+      return NULL;
+    }
+    }
+
+  rv = first_free_entry_in_block(dd->ptrs[1]);
+  if (rv > 0) {
+    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
   }
 
   // Grow to iptr if it turns out that that's necessary
   if (dd->iptr == 0)
   {
-    grow_inode(dd, sizeof(direntry));
+    rv = grow_inode(dd, sizeof(direntry));
+    if(rv < 0) {
+      return NULL;
+    }
   }
+
+  int* iptr_page = pages_get_page(dd->iptr);
+  int curr_pnum = *iptr_page;
+  rv = first_free_entry_in_block(curr_pnum);
+  int iptr_index = 1;
+
+  if (rv > 0) {
+    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
+  }
+
+
+  while(iptr_index < 255) { 
+    //pages 0, 1, 2 allocated, two pages directly, one page indirectly 
+    //grow inode will handle
+
+    curr_pnum  = *(iptr_page + iptr_index);
+
+    if(curr_pnum == 0) {
+      rv = grow_inode(dd, sizeof(direntry));
+        if(rv < 0) {
+          return NULL;
+       }
+      continue;
+    }
+
+
+
+    rv = first_free_entry_in_block(dd->ptrs[1]);
+    return (direntry*)pages_get_page(curr_pnum);
+
+
+
+    rv = first_free_entry_in_block(curr_pnum);
+  int iptr_index = 1;
+
+  if (rv > 0) {
+    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
+  }
+  }
+
+
 
   // Check if it's in the indirect pointers block
   if (dd->iptr != 0) // Check that there is an indirect pointers block
@@ -149,9 +201,7 @@ direntry* first_free_entry(inode* dd) {
     {
       int pnum = dd->iptr + ptr_index;
       dirent = first_free_entry_in_block(pnum);
-      if (dirent != NULL) {
-        return dirent;
-      }
+      
     }
   }
 
