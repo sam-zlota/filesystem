@@ -214,7 +214,8 @@ int directory_delete(inode* dd, const char* name) {
 
 // cons each of the names of the direntries at page with the rest
 slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
-  printf("entered cons page contents\n");
+  printf("entered cons page contents, pnum: %ld, si %ld\n", pnum,
+         starting_index);
   direntry* block = (direntry*)pages_get_page(pnum);
   slist* contents = rest;
   int ii = starting_index;
@@ -225,6 +226,7 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
       contents = s_cons(curr_dirent->name, contents);
     }
   }
+  printf("exiting cons page\n");
   return contents;
 }
 
