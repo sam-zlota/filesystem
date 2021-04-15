@@ -159,10 +159,7 @@ int is_block_empty(int pnum, int starting_index) {
   direntry* block = (direntry*)pages_get_page(pnum);
 
   int ii = starting_index;
-  // if (pnum > 2) {
-  //   // first two direntries reserved for "." and ".."
-  //   ii = 2;
-  // }
+
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (curr_dirent->inum > 0) {
@@ -252,6 +249,7 @@ slist* directory_list(const char* path) {
   while (!is_block_empty(curr_pnum, starting_index)) {
     contents = cons_page_contents(curr_pnum, contents);
     if (iptr_index < 0) {
+      printf("entered first if\n");
       curr_pnum = dd->ptrs[1];
       starting_index = 0;
     } else
@@ -259,6 +257,7 @@ slist* directory_list(const char* path) {
 
     if (curr_pnum == 0) {
       // have reached end
+      printf("breaking dir list\n");
       break;
     }
     iptr_index++;
