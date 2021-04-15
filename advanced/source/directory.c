@@ -27,25 +27,28 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 int directory_lookup(inode* dd, const char* name) {
-  int ptr_index = -1;
-
+  printf("entered directory lookup\n");
+  int rv = -1;
   // You're asking me to lookup the root in the root, so just return the root
+  
+  int ptr_index = -1;
+  int page_index = dd->ptrs[0];
+  direntry* entries = (direntry*)pages_get_page(page_index);
+
   if (strcmp(name, "") == 0) {
-    //return dd->inun
-    
-    return 0;
+    rv = entries[0].inum;
+    printf("exited directory lookup -> %ld\n", rv);
+    return rv;
   }
 
-  int page_index = dd->ptrs[0];
-
   while (1) {
-    direntry* entries = (direntry*)pages_get_page(page_index);
-
-    int ii = 0;
+    entries = (direntry*)pages_get_page(page_index);
     for (int ii = 0; ii < min(dd->size / sizeof(direntry) + 1, MAX_DIRENTRIES);
          ii++) {
       if (strcmp(entries[ii].name, name) == 0) {
-        return entries[ii].inum;
+          rv = entries[ii].inum;
+          printf("exited directory lookup -> %ld\n", rv);
+          return rv;
       }
     }
 
@@ -54,20 +57,19 @@ int directory_lookup(inode* dd, const char* name) {
     if (page_index == dd->ptrs[0] && dd->ptrs[1] != 0) {
       page_index = dd->ptrs[1];
     } else if (page_index == dd->ptrs[1] && dd->iptr != 0) {
-      page_index = dd->iptr;
+
+      page_index = *(int *)pages_get_page(dd->iptr);
       ptr_index = 0;
     } else if (ptr_index >= 0 &&
                ptr_index <
                    IPTR_PAGE_SIZE) {  // TODO this needs to be fixed, later
       ptr_index++;
-      page_index = ptr_index + page_index;
+      page_index = *(((int *) pages_get_page(dd->iptr)) + ptr_index);
     } else {
-      printf("breaking dir lookup\n");
-      break;
+      printf("exited directory lookup -> %ld\n", rv);
+      return rv;
     }
   }
-
-  return -1;
 }
 
 // Returns the parent of this path

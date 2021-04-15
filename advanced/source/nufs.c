@@ -184,12 +184,11 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   int first_free_pnum = alloc_page();
   if (first_free_pnum == -1) {
     printf("pnum error\n");
-
-   
+    return first_free_pnum;
   }
 
-   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
-    return rv;
+  printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
+  return rv;
 }
 
 // most of the following callbacks implement
@@ -480,14 +479,14 @@ int main(int argc, char *argv[]) {
   // char *path = argv[--argc];
   // puts(path);
 
-  char *path = "/";
-  char *name = "hi";
-  slist *split = s_split(path, '/');
-  printf("/hi ->\n");
-  while (split) {
-    printf("\t - %s\n", split->data);
-    split = split->next;
-  }
+  // char *path = "/";
+  // char *name = "hi";
+  // slist *split = s_split(path, '/');
+  // printf("/hi ->\n");
+  // while (split) {
+  //   printf("\t - %s\n", split->data);
+  //   split = split->next;
+  // }
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
