@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
   assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
 
-  char *name = "/filename/second/third/fourth";
+  char *name = "/filename/second/third/";
   printf("%s -> %s\n", name, get_filename_from_path(name));
   // pages_init(argv[--argc]);
   // init_root();
