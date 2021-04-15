@@ -34,6 +34,7 @@ void print_directory(inode* dd);*/
 int find_in_block(int pnum, const char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
   int ii = 0;
+  printf("entered  find\n");
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     printf("comparing: %s with %s\n");
