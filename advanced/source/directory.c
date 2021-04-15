@@ -45,7 +45,7 @@ int find_in_block(int pnum, const char* name) {
 
 // returns the inum of the direntry in this directory with name
 int directory_lookup(inode* dd, const char* name) {
-  printf("entered directory lookup\n");
+  printf("entered directory lookup with dd: %ld\n");
   int rv = -1;
   // You're asking me to lookup the root in the root, so just return the root
   int curr_pnum = dd->ptrs[0];
