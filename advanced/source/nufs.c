@@ -186,7 +186,7 @@ int nufs_unlink(const char *path) {
   printf("entered unlink\n");
   // TODO: handle symbolic links and hard links
   // this is broken so it will fail
-  int rv = -1;
+  // int rv = -1;
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
     printf("exiting unlink: failure, tree_lookup\n");
@@ -204,6 +204,8 @@ int nufs_unlink(const char *path) {
   inode *desired_inode = get_inode(desired_inum);
 
   desired_inode->refs--;
+
+  rv = directory_delete(parent_inode, filename);
   // TODO: do we remove it from the directory but not delete the inode?
 
   // TODO: what is the expected behavior here?, will it remove from this
