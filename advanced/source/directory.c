@@ -62,6 +62,7 @@ int directory_lookup(inode* dd, const char* name) {
     return 0;
   }
 
+  printf("calling find with pnum: %ld and name: %s\n", curr_pnum, name);
   // this will run until it finds matching direntry or checks all direntries
   while (find_in_block(curr_pnum, name) < 0) {
     if (iptr_index < 0)
