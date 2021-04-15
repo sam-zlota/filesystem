@@ -155,13 +155,14 @@ int directory_put(inode* dd, const char* name, int inum) {
 }
 
 // helper to determine if the inode should free this block
-int is_block_empty(int pnum) {
+int is_block_empty(int pnum, int starting_index) {
   direntry* block = (direntry*)pages_get_page(pnum);
-  int ii = 0;
-  if (pnum <= 2) {
-    // first three blocks will never be empty
-    return 0;
-  }
+
+  int ii = starting_index;
+  // if (pnum > 2) {
+  //   // first two direntries reserved for "." and ".."
+  //   ii = 2;
+  // }
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (curr_dirent->inum > 0) {
@@ -242,12 +243,18 @@ slist* directory_list(const char* path) {
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
 
+  int starting_index = 1;
+  if (curr_pnum > 2) {
+    starting_index = 2;
+  }
+
   // this will run until it finds matching direntry or checks all direntries
-  while (!is_block_empty(curr_pnum)) {
+  while (!is_block_empty(curr_pnum, starting_index)) {
     contents = cons_page_contents(curr_pnum, contents);
-    if (iptr_index < 0)
+    if (iptr_index < 0) {
       curr_pnum = dd->ptrs[1];
-    else
+      starting_index = 0;
+    } else
       curr_pnum = *(iptr_page + iptr_index);
 
     if (curr_pnum == 0) {
