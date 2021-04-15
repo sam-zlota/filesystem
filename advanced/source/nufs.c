@@ -139,7 +139,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   char *filename = get_filename_from_path(path);
 
   // TODO: make sure alloc_inum works
-  int new_inum = aloc_inode();
+  int new_inum = alloc_inode();
   if (new_inum < 0) {
     printf("exiting mknod: failure: alloc inum\n");
     return -ENOSPC;
