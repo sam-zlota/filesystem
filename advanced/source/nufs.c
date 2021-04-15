@@ -30,6 +30,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 // Checks if a file exists.
 
 int nufs_access(const char *path, int mask) {
+  // TODO:
   int rv = 0;
   printf("access(%s, %04o) -> %d\n", path, mask, rv);
   return rv;
@@ -474,17 +475,6 @@ void init_root() {
 int main(int argc, char *argv[]) {
   assert(argc > 2 && argc < 6);
   // printf("TODO: mount %s as data file\n", argv[--argc]);
-  // char *path = argv[--argc];
-  // puts(path);
-
-  // char *path = "/";
-  // char *name = "hi";
-  // slist *split = s_split(path, '/');
-  // printf("/hi ->\n");
-  // while (split) {
-  //   printf("\t - %s\n", split->data);
-  //   split = split->next;
-  // }
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);

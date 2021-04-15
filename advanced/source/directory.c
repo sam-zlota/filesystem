@@ -27,9 +27,7 @@ int directory_delete(inode* dd, const char* name);
 slist* directory_list(const char* path);
 void print_directory(inode* dd);*/
 
-// Returns inode for the given file name in the given directory
-// Returns -1 if we can't find it
-
+// returns direntry index of direntry with name at block at page pnum
 int find_in_block(int pnum, char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
   int ii = 0;
@@ -42,6 +40,7 @@ int find_in_block(int pnum, char* name) {
   return -1;
 }
 
+// returns the inum of the direntry in this directory with name
 int directory_lookup(inode* dd, const char* name) {
   printf("entered directory lookup\n");
   int rv = -1;
@@ -70,7 +69,7 @@ int directory_lookup(inode* dd, const char* name) {
   return desired_direntry->inum;
 }
 
-// Returns the parent of this path
+// Returns the inum of parent directory of the filename at the end of the path
 int tree_lookup(const char* path) {
   printf("entered tree lookup\n");
   slist* delim_path = s_split(strdup(path), '/');
@@ -93,10 +92,7 @@ int tree_lookup(const char* path) {
   return curr_dir;
 }
 
-// Helper function for first_free_entry
-// Get the first free entry in the given directory block
-// we have the invariant that the first page that has inum 0
-// must be free
+// returns direntry index of direntry with inum == 0, which means it is free
 int first_free_entry_in_block(int pnum) {
   direntry* page = (direntry*)pages_get_page(pnum);
   int ii = 0;
@@ -108,8 +104,7 @@ int first_free_entry_in_block(int pnum) {
   return -1;
 }
 
-// Puts an inum with the given name in the given parent directory, returning the
-// new directory's inum
+// Puts an inum with the given name in the given parent directory
 int directory_put(inode* dd, const char* name, int inum) {
   printf("entered directory put\n");
 
@@ -163,7 +158,8 @@ int is_block_empty(int pnum) {
   return 1;
 }
 
-// this should only be called when there are no more links/refs
+// this should only be called when there are no more links/refs, deletes
+// direntry in directory with name
 int directory_delete(inode* dd, const char* name) {
   assert(dd->refs == 0);
   printf("called directory delete\n");
@@ -203,4 +199,50 @@ int directory_delete(inode* dd, const char* name) {
 
   printf("exiting directroy delete: success\n");
   return 0;
+}
+
+// cons each of the names of the direntries at page with the rest
+slist* cons_page_contents(int pnum, slist* rest) {
+  direntry* block = (direntry*)pages_get_page(pnum);
+  slist* contents = rest;
+  int ii = 0;
+  while (ii < MAX_DIRENTRIES) {
+    direntry* curr_dirent = &block[ii];
+    if (curr_dirent->inum != 0) {
+      // TODO: handle root
+      contents = s_cons(curr_dirent->name, contents);
+    }
+  }
+  return contents;
+}
+
+// will put all the contents of directory into an slist
+slist* directory_list(const char* path) {
+  printf("entered directory list\n");
+
+  inode* dd = get_inode(tree_lookup(path));
+  slist* contents = NULL;
+
+  // You're asking me to lookup the root in the root, so just return the root
+  int curr_pnum = dd->ptrs[0];
+  int iptr_index = -1;
+  int* iptr_page = (int*)pages_get_page(dd->iptr);
+
+  // this will run until it finds matching direntry or checks all direntries
+  while (!is_block_empty(curr_pnum)) {
+    contents = cons_page_contents(curr_pnum, contents);
+    if (iptr_index < 0)
+      curr_pnum = dd->ptrs[1];
+    else
+      curr_pnum = *(iptr_page + iptr_index);
+
+    if (curr_pnum == 0) {
+      // have reached end
+      break;
+    }
+    iptr_index++;
+  }
+
+  printf("successfully exited directory list\n");
+  return contents;
 }
