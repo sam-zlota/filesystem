@@ -217,7 +217,7 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
   printf("entered cons page contents\n");
   direntry* block = (direntry*)pages_get_page(pnum);
   slist* contents = rest;
-  int ii = 0;
+  int ii = starting_index;
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (curr_dirent->inum != 0) {
