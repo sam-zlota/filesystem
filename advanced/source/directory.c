@@ -1,9 +1,10 @@
 // based on cs3650 starter code
 #define DIR_NAME 48
 
+#include "directory.h"
+
 #include <errno.h>
 #include <string.h>
-#include "directory.h"
 
 #include "inode.h"
 #include "pages.h"
@@ -29,19 +30,15 @@ void print_directory(inode* dd);*/
 // Returns inode for the given file name in the given directory
 // Returns -1 if we can't find it
 
-
-
 int find_in_block(int pnum, char* name) {
- direntry* block = (direntry*)pages_get_page(pnum);
-
-int ii = 0;
-
+  direntry* block = (direntry*)pages_get_page(pnum);
+  int ii = 0;
   while (ii < MAX_DIRENTRIES) {
-      direntry* curr_dirent = &block[ii];
+    direntry* curr_dirent = &block[ii];
 
-      if (strcmp( curr_dirent->name, name) == 0) {
-        return ii;
-      }
+    if (strcmp(curr_dirent->name, name) == 0) {
+      return ii;
+    }
   }
 
   return -1;
@@ -51,22 +48,21 @@ int directory_lookup(inode* dd, const char* name) {
   printf("entered directory lookup\n");
   int rv = -1;
   // You're asking me to lookup the root in the root, so just return the root
-  
+
   int curr_pnum = dd->ptrs[0];
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
 
-  //this will run until it finds matching direntry or checks all direntries
-  while( find_in_block(curr_pnum, name) < 0) {
-
-    if(iptr_index < 0) 
+  // this will run until it finds matching direntry or checks all direntries
+  while (find_in_block(curr_pnum, name) < 0) {
+    if (iptr_index < 0)
       curr_pnum = dd->ptrs[1];
-    else 
-      curr_pnum = *(iptr_page + iptr_index); 
-    
-    if(curr_pnum == 0) {
-      //have reached end
-      return -ENOENT; 
+    else
+      curr_pnum = *(iptr_page + iptr_index);
+
+    if (curr_pnum == 0) {
+      // have reached end
+      return -ENOENT;
     }
     iptr_index++;
   }
@@ -74,7 +70,8 @@ int directory_lookup(inode* dd, const char* name) {
   int direntry_index = find_in_block(curr_pnum, name);
   direntry* curr_directory = pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
-  return desired_direntry->inum;;
+  return desired_direntry->inum;
+  ;
 }
 
 // Returns the parent of this path
@@ -118,28 +115,26 @@ int first_free_entry_in_block(int pnum) {
 
 // Gets the first free entry at a given inode
 direntry* first_free_entry(inode* dd) {
-
   int rv = 0;
   int curr_pnum = dd->ptrs[0];
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
 
-  //this will run until it finds free block or runs out of memory
-  while(first_free_entry_in_block(curr_pnum) < 0) {
-
-    if(iptr_index < 0) 
+  // this will run until it finds free block or runs out of memory
+  while (first_free_entry_in_block(curr_pnum) < 0) {
+    if (iptr_index < 0)
       curr_pnum = dd->ptrs[1];
-    else 
-      curr_pnum = *(iptr_page + iptr_index); 
-    
-    if(curr_pnum == 0) {
-        rv = grow_inode(dd, sizeof(direntry));
-        if(rv < 0) {
-          //we ran out of memory
-          return NULL;
-        }
-        //should now check break from while condition, becasue we 
-        //succesfully allocated a new page
+    else
+      curr_pnum = *(iptr_page + iptr_index);
+
+    if (curr_pnum == 0) {
+      rv = grow_inode(dd, sizeof(direntry));
+      if (rv < 0) {
+        // we ran out of memory
+        return NULL;
+      }
+      // should now check break from while condition, becasue we
+      // succesfully allocated a new page
     }
 
     iptr_index++;
@@ -157,25 +152,19 @@ direntry* first_free_entry(inode* dd) {
 int directory_put(inode* dd, const char* name, int inum) {
   direntry* new_dirent = first_free_entry(dd);
 
-  if(new_dirent == NULL) {
+  if (new_dirent == NULL) {
     return -ENOSPC;
   }
 
   new_dirent->inum = inum;
   strcpy(new_dirent->name, name);
-  
-  return 0;
 
+  return 0;
 }
 
-
-//this should only be called when there are no more links/refs
+// this should only be called when there are no more links/refs
 int directory_delete(inode* dd, const char* name) {
-
   assert(dd->refs == 0);
-  
 
   inode* parent = tree_lookup
-
-
 }
