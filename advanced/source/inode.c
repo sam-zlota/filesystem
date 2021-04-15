@@ -77,41 +77,34 @@ int grow_inode(inode *node, int size) {
 }
 
 // Shrinks the inode by the given size
-int shrink_inode(inode* node, int size)
-{
+int shrink_inode(inode *node, int size) {
   node->size -= size;
   int dealloc_space = 0;
 
-  // We have a pointer to the current page and we have a pointer to the next pointer so that whenever we detect a null page, we can shift the contents of the next page down one
-  int* ppointer = &node->ptrs[0];
-  int* next_ppointer = NULL;
+  // We have a pointer to the current page and we have a pointer to the next
+  // pointer so that whenever we detect a null page, we can shift the contents
+  // of the next page down one
+  int *ppointer = &node->ptrs[0];
+  int *next_ppointer = NULL;
   int iptr_index = -1;
 
-  while(1)
-  {
-    if (*ppointer == node->ptrs[0] && node->ptrs[1] != 0)
-    {
+  while (1) {
+    if (*ppointer == node->ptrs[0] && node->ptrs[1] != 0) {
       next_ppointer = &node->ptrs[1];
-    }
-    else if (*ppointer == node->ptrs[1] && node->iptr != 0)
-    {
-      next_ppointer = (int*)pages_get_page(node->iptr);
+    } else if (*ppointer == node->ptrs[1] && node->iptr != 0) {
+      next_ppointer = (int *)pages_get_page(node->iptr);
       iptr_index = 0;
-    }
-    else if (iptr_index >= 0 && iptr_index < PAGE_SIZE)
-    {
+    } else if (iptr_index >= 0 && iptr_index < PAGE_SIZE) {
       iptr_index++;
-      next_ppointer = (int*)pages_get_page(node->iptr) + iptr_index;
-    }
-    else
-    {
+      next_ppointer = (int *)pages_get_page(node->iptr) + iptr_index;
+    } else {
       // If it reaches here, that means that we're done
       break;
     }
 
-    // If we detect a block is equal to zero, we should shift the contents of the next pointer in, then nullify the next pointer
-    if (*ppointer == 0)
-    {
+    // If we detect a block is equal to zero, we should shift the contents of
+    // the next pointer in, then nullify the next pointer
+    if (*ppointer == 0) {
       *ppointer = *next_ppointer;
       *next_ppointer = 0;
     }
