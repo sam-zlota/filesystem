@@ -68,20 +68,6 @@ int alloc_page() {
   return -1;
 }
 
-int alloc_inum() {
-  void *ibm = get_inode_bitmap();
-
-  for (int ii = 1; ii < PAGE_COUNT; ++ii) {
-    if (!bitmap_get(ibm, ii)) {
-      bitmap_put(ibm, ii, 1);
-      // printf("+ alloc_page() -> %d\n", ii);
-      return ii;
-    }
-  }
-
-  return -1;
-}
-
 void free_page(int pnum) {
   // printf("+ free_page(%d)\n", pnum);
   void *pbm = get_pages_bitmap();
