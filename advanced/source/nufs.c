@@ -63,6 +63,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   char *filename = get_filename_from_path(path);
   printf("looking for filename: %s in directory with inode: %ld\n", filename,
          parent_inum);
+  return -1;
   int desired_inum = directory_lookup(parent_inode, filename);
 
   if (desired_inum < 0) {
