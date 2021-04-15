@@ -55,7 +55,8 @@ int nufs_getattr(const char *path, struct stat *st) {
   memset(st, 0, sizeof(stat));
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
-    printf("getattr exited: failure, parent inum") return parent_inum;
+    printf("getattr exited: failure, parent inum");
+    return parent_inum;
   }
 
   inode *parent_inode = get_inode(parent_inum);
