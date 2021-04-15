@@ -177,33 +177,14 @@ direntry* first_free_entry(inode* dd) {
       continue;
     }
 
-
-
-    rv = first_free_entry_in_block(dd->ptrs[1]);
-    return (direntry*)pages_get_page(curr_pnum);
-
-
-
     rv = first_free_entry_in_block(curr_pnum);
-  int iptr_index = 1;
 
-  if (rv > 0) {
-    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
-  }
-  }
-
-
-
-  // Check if it's in the indirect pointers block
-  if (dd->iptr != 0) // Check that there is an indirect pointers block
-  {
-    for (int ptr_index = 0; ptr_index < IPTR_PAGE_SIZE; ptr_index++)
-    {
-      int pnum = dd->iptr + ptr_index;
-      dirent = first_free_entry_in_block(pnum);
-      
+    if (rv > 0) {
+        return &(((direntry*)pages_get_page(curr_pnum))[rv]);
     }
+    iptr_index++;
   }
+  
 
   return NULL;
 }
