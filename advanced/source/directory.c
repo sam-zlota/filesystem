@@ -52,6 +52,12 @@ int directory_lookup(inode* dd, const char* name) {
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
 
+  // this handles the case "" is given
+  if (strcmp("\0", name) == 0) {
+    // it means we want
+    return 0;
+  }
+
   // this will run until it finds matching direntry or checks all direntries
   while (find_in_block(curr_pnum, name) < 0) {
     if (iptr_index < 0)
