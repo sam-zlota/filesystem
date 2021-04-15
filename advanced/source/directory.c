@@ -78,7 +78,7 @@ int tree_lookup(const char* path) {
 
   // This means that we are at the root node
   if (delim_path->next == NULL) {
-    printf("returning zero\n");
+    printf("tree lookup exiting, success found root\n");
     return 0;
   }
 
@@ -89,6 +89,7 @@ int tree_lookup(const char* path) {
     delim_path = delim_path->next;
   }
 
+  printf("tree lookup exiting, success\n");
   return curr_dir;
 }
 
@@ -180,8 +181,7 @@ int directory_delete(inode* dd, const char* name) {
 
     if (curr_pnum == 0) {
       // have reached end of this directory
-      printf("nothing found, exiting directory delete\n");
-
+      printf(" exiting directory delete: failure\n");
       return -ENOENT;
     }
     iptr_index++;
@@ -201,6 +201,6 @@ int directory_delete(inode* dd, const char* name) {
     // inode_shrink();
   }
 
-  printf("successfully exiting directroy delete\n");
+  printf("exiting directroy delete: success\n");
   return 0;
 }
