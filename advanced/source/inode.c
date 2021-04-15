@@ -25,6 +25,25 @@
 // int shrink_inode(inode* node, int size);
 // int inode_get_pnum(inode* node, int fpn);
 
+int alloc_inode() {
+  void *ibm = get_inode_bitmap();
+
+  for (int ii = 1; ii < 256; ++ii) {
+    if (!bitmap_get(ibm, ii)) {
+      bitmap_put(ibm, ii, 1);
+      inode *new_inode = get_inode(ii);
+      int new_pnum = alloc_page();
+      if (new_pnum < 0) {
+        return new_pnum;
+      }
+      new_inode->ptrs[0] = new_pnum;
+      return ii;
+    }
+  }
+
+  return -1;
+}
+
 inode *get_root_inode() {
   // first address in inode array
   // root inode comes 32 bytes (256 bits) after the beggining of inode bitmap
