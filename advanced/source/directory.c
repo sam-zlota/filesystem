@@ -158,6 +158,10 @@ int directory_put(inode* dd, const char* name, int inum) {
 int is_block_empty(int pnum) {
   direntry* block = (direntry*)pages_get_page(pnum);
   int ii = 0;
+  if (pnum <= 2) {
+    // first three blocks will never be empty
+    return 0;
+  }
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (curr_dirent->inum > 0) {
