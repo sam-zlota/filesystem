@@ -46,7 +46,7 @@ int find_in_block(int pnum, const char* name) {
 
 // returns the inum of the direntry in this directory with name
 int directory_lookup(inode* dd, const char* name) {
-  printf("entered directory lookup with dd\n");
+  printf("entered directory lookup with name: %s\n", name);
   int rv = -1;
   // You're asking me to lookup the root in the root, so just return the root
   int curr_pnum = dd->ptrs[0];
@@ -225,7 +225,6 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
     if (curr_dirent->inum != 0) {
-      // TODO: handle root
       contents = s_cons(curr_dirent->name, contents);
     }
     ii++;

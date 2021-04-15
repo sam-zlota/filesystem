@@ -175,6 +175,7 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 // most of the following callbacks implement
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode) {
+  printf("called mkdir\n");
   int rv = nufs_mknod(path, mode | 040000, 0);
   // TODO: should we call dir init here? or in mknod
   printf("mkdir(%s) -> %d\n", path, rv);
