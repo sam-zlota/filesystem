@@ -206,7 +206,7 @@ int directory_delete(inode* dd, const char* name) {
   assert(desired_direntry->inum == 0);
 
   // check to see if any more
-  if (is_block_empty(curr_pnum)) {
+  if (is_block_empty(curr_pnum, 2)) {
     printf("calling inode shrink from directory delete\n");
     // inode_shrink();
   }
