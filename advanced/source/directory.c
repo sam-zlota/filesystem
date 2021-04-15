@@ -213,7 +213,7 @@ int directory_delete(inode* dd, const char* name) {
 }
 
 // cons each of the names of the direntries at page with the rest
-slist* cons_page_contents(int pnum, slist* rest) {
+slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
   printf("entered cons page contents\n");
   direntry* block = (direntry*)pages_get_page(pnum);
   slist* contents = rest;
@@ -232,29 +232,28 @@ slist* cons_page_contents(int pnum, slist* rest) {
 slist* directory_list(const char* path) {
   printf("entered directory list\n");
 
-  inode* dd = get_inode(tree_lookup(path));
-  slist* contents = NULL;
-
-  // You're asking me to lookup the root in the root, so just return the root
+  int parent_inum = tree_lookup(path);
+  inode* dd = get_inode(parent_inum);
   int curr_pnum = dd->ptrs[0];
-  int iptr_index = -1;
-  int* iptr_page = (int*)pages_get_page(dd->iptr);
 
+  slist* contents = s_cons(".", NULL);
   int starting_index = 1;
-  if (curr_pnum > 2) {
+  if (parent_inum > 0) {
+    contents = s_cons("..", contents);
     starting_index = 2;
   }
 
-  // this will run until it finds matching direntry or checks all direntries
-  while (!is_block_empty(curr_pnum, starting_index)) {
-    contents = cons_page_contents(curr_pnum, contents);
-    if (iptr_index < 0) {
-      printf("entered first if\n");
-      curr_pnum = dd->ptrs[1];
-      starting_index = 0;
-    } else
-      curr_pnum = *(iptr_page + iptr_index);
+  contents = cons_page_contents(curr_pnum, starting_index, contents);
 
+  int iptr_index = 0;
+  int* iptr_page = (int*)pages_get_page(dd->iptr);
+  curr_pnum = dd->ptrs[1];
+  starting_index = 0;
+
+  // this will run until it finds matching direntry or checks all direntries
+  while (!is_block_empty(curr_pnum)) {
+    contents = cons_page_contents(curr_pnum, starting_index, contents);
+    curr_pnum = *(iptr_page + iptr_index);
     if (curr_pnum == 0) {
       // have reached end
       printf("breaking dir list\n");
