@@ -183,6 +183,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
 }
 
 int nufs_unlink(const char *path) {
+  int rv = 0;
   printf("entered unlink\n");
   // TODO: handle symbolic links and hard links
   // this is broken so it will fail
@@ -218,7 +219,7 @@ int nufs_unlink(const char *path) {
   //   memset(desired_direntry, 0, sizeof(direntry));
   // }
 
-  printf("broken: unlink(%s) -> %d\n", path, rv);
+  printf("unlink(%s) -> %d\n", path, rv);
   return rv;
 }
 
