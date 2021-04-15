@@ -25,10 +25,19 @@
 
 int ROOT_PNUM = -1;
 
+static char *get_filename_from_path(const char *path) {
+  slist *path_list = s_split(path, '/');
+  while (path_list->next) {
+    path_list = path_list->next;
+  }
+  return path_list->data;
+}
+
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 
 // TODO: need to implement: init dir (to init directories other than root),
 // shrink inode(coalescing), fix read and write
+// TODO: get file name from path
 
 // implementation for: man 2 access
 // Checks if a file exists.
