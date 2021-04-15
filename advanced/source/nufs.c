@@ -205,6 +205,7 @@ int nufs_unlink(const char *path) {
   inode *desired_inode = get_inode(desired_inum);
 
   desired_inode->refs--;
+  printf("calling delete with refs: %ld\n", desired_inode->ref);
 
   rv = directory_delete(parent_inode, filename);
   // TODO: do we remove it from the directory but not delete the inode?

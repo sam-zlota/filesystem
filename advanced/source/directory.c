@@ -191,7 +191,7 @@ int is_block_empty(int pnum) {
 // this should only be called when there are no more links/refs, deletes
 // direntry in directory with name
 int directory_delete(inode* dd, const char* name) {
-  assert(dd->refs == 0);
+  // assert(dd->refs == 0);
   printf("called directory delete\n");
 
   int curr_pnum = dd->ptrs[0];
