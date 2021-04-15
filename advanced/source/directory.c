@@ -30,7 +30,7 @@ void print_directory(inode* dd);*/
 // TODO: make sure to call bitmap helpers, alloc, free!!!!
 
 // returns direntry index of direntry with name at block at page pnum
-int find_in_block(int pnum, char* name) {
+int find_in_block(int pnum, const char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
   int ii = 0;
   while (ii < MAX_DIRENTRIES) {
