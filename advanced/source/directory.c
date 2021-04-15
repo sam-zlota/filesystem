@@ -160,7 +160,10 @@ int directory_put(inode* dd, const char* name, int inum) {
   direntry* new_dirent = &curr_directory[direntry_index];
 
   new_dirent->inum = inum;
-  strcpy(new_dirent->name, name);
+
+  // char buf[DIR_NAME] = NULL;
+  strcpy(&new_dirent->name, name);
+  // new_dirent->name = buf;
   printf("exiting directory put: success\n");
   return 0;
 }
