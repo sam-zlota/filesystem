@@ -119,74 +119,40 @@ int first_free_entry_in_block(int pnum) {
 
 // Gets the first free entry at a given inode
 direntry* first_free_entry(inode* dd) {
+  
   int rv = 0;
+  int curr_pnum = dd->ptrs[0];
+  int iptr_index = -1;
+  int* iptr_page = (int*)pages_get_page(dd->iptr);
 
-  rv = first_free_entry_in_block(dd->ptrs[0]);
 
+  //this will run until it finds free block or runs out of memory
+  while( first_free_entry_in_block(curr_pnum) < 0) {
 
-  if (rv > 0) {
-    return &(((direntry*)pages_get_page(dd->ptrs[0]))[rv]);
-  }
-  // So it didn't pan out for ptrs[0]... Let's see if it's in ptrs[1]
-  if (dd->ptrs[1] == 0) // First check that there's anything in ptrs[1]
-  {
-    // Grow ptrs[1] if it turns out that there's nothing in it
-    // Getting to this point in the code means that ptrs[1] is full
-
-    rv = grow_inode(dd, sizeof(direntry));
-    if(rv < 0) {
-      return NULL;
+    if(iptr_index < 0) {
+      curr_pnum = dd->ptrs[1];
     }
+    else {
+      curr_pnum = *(iptr_page + iptr_index); 
     }
-
-  rv = first_free_entry_in_block(dd->ptrs[1]);
-  if (rv > 0) {
-    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
-  }
-
-  // Grow to iptr if it turns out that that's necessary
-  if (dd->iptr == 0)
-  {
-    rv = grow_inode(dd, sizeof(direntry));
-    if(rv < 0) {
-      return NULL;
-    }
-  }
-
-  int* iptr_page = pages_get_page(dd->iptr);
-  int curr_pnum = *iptr_page;
-  rv = first_free_entry_in_block(curr_pnum);
-  int iptr_index = 1;
-
-  if (rv > 0) {
-    return &(((direntry*)pages_get_page(dd->ptrs[1]))[rv]);
-  }
-
-
-  while(iptr_index < 255) { 
-    //pages 0, 1, 2 allocated, two pages directly, one page indirectly 
-    //grow inode will handle
-
-    curr_pnum  = *(iptr_page + iptr_index);
 
     if(curr_pnum == 0) {
-      rv = grow_inode(dd, sizeof(direntry));
+        rv = grow_inode(dd, sizeof(direntry));
         if(rv < 0) {
           return NULL;
-       }
-      continue;
+        }
+        continue;
     }
 
-    rv = first_free_entry_in_block(curr_pnum);
-
-    if (rv > 0) {
-        return &(((direntry*)pages_get_page(curr_pnum))[rv]);
-    }
     iptr_index++;
-  }
-  
 
-  return NULL;
+  }
+
+  int direntry_index = first_free_entry_in_block(curr_pnum);
+  direntry* curr_direntry = pages_get_page(curr_pnum);
+  direntry* first_free = &curr_direntry[direntry_index];
+
+  return first_free;
 }
 
 // Puts an inum with the given name in the given parent directory, returning the
