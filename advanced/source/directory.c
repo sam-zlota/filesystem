@@ -117,7 +117,7 @@ int first_free_entry_in_block(int pnum) {
 
 // Puts an inum with the given name in the given parent directory
 int directory_put(inode* dd, const char* name, int inum) {
-  printf("entered directory put\n");
+  printf("entered directory put with name: %s\n", name);
 
   int rv = 0;
   int curr_pnum = dd->ptrs[0];
