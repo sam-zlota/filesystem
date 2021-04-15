@@ -36,6 +36,7 @@ int find_in_block(int pnum, const char* name) {
   int ii = 0;
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
+    printf("comparing: %s with %s\n");
     if (strcmp(curr_dirent->name, name) == 0) {
       printf("FOUND in block\n");
       return ii;
