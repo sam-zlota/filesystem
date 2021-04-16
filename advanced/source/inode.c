@@ -90,7 +90,7 @@ int grow_inode(inode *node, int size) {
     return -ENOSPC;
   }
 
-  node->size += size;
+  node->size += pages_needed * 4096;
   return 0;
 }
 
