@@ -78,10 +78,13 @@ int grow_inode(inode *node, int size) {
       iptr_arr = (int *)pages_get_page(node->iptr);
     }
     int *curr_pnum_ptr = iptr_arr + iptr_index;
-    *curr_pnum_ptr = alloc_page();
-    printf("iprtr index: %ld, new page: %ld\n", iptr_index, *curr_pnum_ptr);
+    if (*curr_pnum_ptr == 0) {
+      *curr_pnum_ptr = alloc_page();
+      printf("iprtr index: %ld, new page: %ld\n", iptr_index, *curr_pnum_ptr);
 
-    pages_needed--;
+      pages_needed--;
+    }
+
     iptr_index++;
   }
   if (pages_needed > 0) {
