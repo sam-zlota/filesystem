@@ -336,18 +336,18 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
       curr_pnum = *(iptr_page + iptr_index);
 
     assert(curr_pnum > 0);
+
+    desired_data_block = pages_get_page(curr_pnum);
+    memcpy(desired_data_block, buf, min(bytes_to_read, 4096));
+    bytes_to_read -= min(bytes_to_read, 4096);
+
+    iptr_index++;
   }
-  desired_data_block = pages_get_page(curr_pnum);
-  memcpy(desired_data_block, buf, min(bytes_to_read, 4096));
-  bytes_to_read -= min(bytes_to_read, 4096);
 
-  iptr_index++;
-}
+  rv = desired_inode->size;
 
-rv = desired_inode->size;
-
-printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-return rv;
+  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  return rv;
 }
 
 // Actually write data
