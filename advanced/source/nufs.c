@@ -322,6 +322,11 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int iptr_index = -1;
   int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
 
+
+  char buf[5]
+  strncpy(buf, (char*)(desired_data_block), 5);
+  printf("reading: %s", buf);
+
   // this will run until it finds free block or runs out of memory
   while (bytes_to_read > 0) {
     printf("here!!");
