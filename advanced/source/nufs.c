@@ -239,7 +239,28 @@ int nufs_rmdir(const char *path) {
 // implements: man 2 rename
 // called to move a file within the same filesystem
 int nufs_rename(const char *from, const char *to) {
-  int rv = -1;
+  int rv = 0;
+  printf("entered rebane with from: %s to: %s\n", from, to);
+  memset(st, 0, sizeof(stat));
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    printf("getattr exited: failure, parent inum");
+    return parent_inum;
+  }
+
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+
+  int desired_inum = directory_lookup(parent_inode, filename);
+
+  inode *desired_inode = get_inode(desired_inum);
+
+  directory_put(parent_inode, to, desired_inum);
+  directory_delete(parent_inode, from);
+
+  assert(directory_lookup(parent_inode, from) < 0);
+  assert(directory_lookup(parent_inode, to) > 0);
+
   printf("rename(%s => %s) -> %d\n", from, to, rv);
   return rv;
 }
