@@ -240,11 +240,9 @@ int nufs_rmdir(const char *path) {
 // called to move a file within the same filesystem
 int nufs_rename(const char *from, const char *to) {
   int rv = 0;
-  printf("entered rebane with from: %s to: %s\n", from, to);
-  memset(st, 0, sizeof(stat));
+  printf("entered rename with from: %s to: %s\n", from, to);
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
-    printf("getattr exited: failure, parent inum");
     return parent_inum;
   }
 
