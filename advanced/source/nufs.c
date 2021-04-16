@@ -345,6 +345,45 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   rv = desired_inode->size - bytes_to_read;
 
+  int bytes_read = 0;
+
+  int pages_to_read = bytes_to_pages(size);
+
+  void *desired_data_block;
+  for (int ptr_index = bytes_to_pages(offset); ptr_index < pages_to_read;
+       ptr_index++) {
+    if (ptr_index == 0) {
+      desired_data_block = pages_get_page(desired_inode->ptrs[0]);
+    }
+    if (ptr_index == 1) {
+      if (desired_inode->ptrs[1] == 0) {
+        grow_inode(desired_inode, size);
+      }
+      desired_data_block = pages_get_page(desired_inode->ptrs[1]);
+    }
+    if (ptr_index > 1) {
+      int iptr_index = ptr_index - 2;
+      int *iptr_arr;
+      if (desired_inode->iptr == 0) {
+        grow_inode(desired_inode, size);
+      }
+      assert(desired_inode->iptr != 0);
+      iptr_arr = (int *)pages_get_page(desired_inode->iptr);
+
+      if (iptr_arr[iptr_index] == 0) {
+        grow_inode(desired_inode, size);
+      }
+      assert(iptr_arr[iptr_index] != 0);
+
+      desired_data_block = pages_get_page(iptr_arr[iptr_index]);
+    }
+
+    memcpy(buf, desired_data_block, min(size, 4096));
+    bytes_read += min(size, 4096);
+  }
+  // desired_inode->size += bytes_written;
+  rv = bytes_written;
+
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
