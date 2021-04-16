@@ -440,7 +440,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
     desired_data_block = pages_get_page(iptr_arr[iptr_index]);
   }
-
+  printf("writing\n");
   memcpy(desired_data_block, buf, min(size, 4096));
   bytes_written = min(size, 4096);
 
