@@ -372,7 +372,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   int ptr_index = bytes_to_pages(offset);
   void *desired_data_block;
   if (ptr_index == 1) {
-    print("HERE");
+    printf("HERE");
     desired_data_block = pages_get_page(desired_inode->ptrs[0]);
   }
   if (ptr_index == 2) {
