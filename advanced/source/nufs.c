@@ -166,8 +166,11 @@ int nufs_mkdir(const char *path, mode_t mode) {
   printf("called mkdir\n");
   int rv = nufs_mknod(path, mode | 040000, 0);
 
-  int dir_inum = tree_lookup(path);
-  assert(dir_inum > 0);
+  int parent_inum = tree_lookup(path);
+  inode *parent_inode = get_inode(parent_inum);
+  int desired_inum =
+      directory_lookup(parent_inode, get_filename_from_path(path));
+  printf("new inum: %ld\n", desired_inum);
 
   // TODO: should we call dir init here? or in mknod
   printf("mkdir(%s) -> %d\n", path, rv);
