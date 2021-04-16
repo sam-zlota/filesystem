@@ -339,7 +339,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     iptr_index++;
   }
 
-  rv = desired_inode->size;
+  rv = desired_inode->size - bytes_to_read;
 
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
@@ -401,7 +401,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   }
 
   desired_inode->size = size;  // TODO: plus equals?, handle succesive writes
-  rv = size;
+  rv = bytes_written;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
