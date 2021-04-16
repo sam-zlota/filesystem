@@ -74,12 +74,13 @@ int nufs_getattr(const char *path, struct stat *st) {
   if (desired_inum < 0) {
     // TODO: handle adding directories
     // I guess we only make directories with mkdir
-    rv = nufs_mknod(path, 0100644, 0);
-    if (rv < 0) {
-      printf("getattr exited: failure, mknod");
-      return rv;
-    }
-    return nufs_getattr(path, st);
+    // rv = nufs_mknod(path, 0100644, 0);
+    // if (rv < 0) {
+    //   printf("getattr exited: failure, mknod");
+    //   return rv;
+    // }
+    // return nufs_getattr(path, st);
+    return -ENOENT;
   }
 
   inode *desired_inode = get_inode(desired_inum);
