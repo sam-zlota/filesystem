@@ -374,18 +374,18 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   int ptr_index = bytes_to_pages(offset);
   printf("ptr_index: %ld\n", ptr_index);
   void *desired_data_block;
-  if (ptr_index == 1) {
+  if (ptr_index == 0) {
     printf("HERE");
     desired_data_block = pages_get_page(desired_inode->ptrs[0]);
   }
-  if (ptr_index == 2) {
+  if (ptr_index == 1) {
     if (desired_inode->ptrs[1] == 0) {
       grow_inode(desired_inode, size);
     }
     desired_data_block = pages_get_page(desired_inode->ptrs[1]);
   }
-  if (ptr_index > 2) {
-    int iptr_index = ptr_index - 3;
+  if (ptr_index > 1) {
+    int iptr_index = ptr_index - 2;
     int *iptr_arr;
     if (desired_inode->iptr == 0) {
       grow_inode(desired_inode, size);
