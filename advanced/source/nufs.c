@@ -379,7 +379,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
-
+    printf("here!\n");
     memcpy(buf, desired_data_block, min(size, 4096));
     bytes_read += min(size, 4096);
   }
