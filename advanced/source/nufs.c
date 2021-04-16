@@ -72,14 +72,6 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   if (desired_inum < 0) {
-    // TODO: handle adding directories
-    // I guess we only make directories with mkdir
-    // rv = nufs_mknod(path, 0100644, 0);
-    // if (rv < 0) {
-    //   printf("getattr exited: failure, mknod");
-    //   return rv;
-    // }
-    // return nufs_getattr(path, st);
     return -ENOENT;
   }
 
@@ -173,6 +165,10 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 int nufs_mkdir(const char *path, mode_t mode) {
   printf("called mkdir\n");
   int rv = nufs_mknod(path, mode | 040000, 0);
+
+  int dir_inum = tree_lookup(path);
+  assert(dir_inum > 0);
+
   // TODO: should we call dir init here? or in mknod
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
