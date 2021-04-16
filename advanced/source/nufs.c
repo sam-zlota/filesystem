@@ -315,39 +315,39 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   inode *desired_inode = get_inode(desired_inum);
 
-  int bytes_to_read = desired_inode->size;
-  int curr_pnum = desired_inode->ptrs[0];
+  // int bytes_to_read = desired_inode->size;
+  // int curr_pnum = desired_inode->ptrs[0];
 
-  assert(curr_pnum > 0);
-  void *desired_data_block = pages_get_page(curr_pnum);
-  memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
-  bytes_to_read -= min(bytes_to_read, 4096);
+  // assert(curr_pnum > 0);
+  // void *desired_data_block = pages_get_page(curr_pnum);
+  // memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
+  // bytes_to_read -= min(bytes_to_read, 4096);
 
-  int iptr_index = -1;
-  int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
+  // int iptr_index = -1;
+  // int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
 
-  // this will run until it finds free block or runs out of memory
-  while (bytes_to_read > 0) {
-    printf("here!!");
-    if (iptr_index < 0)
-      curr_pnum = desired_inode->ptrs[1];
-    else
-      curr_pnum = *(iptr_page + iptr_index);
+  // // this will run until it finds free block or runs out of memory
+  // while (bytes_to_read > 0) {
+  //   printf("here!!");
+  //   if (iptr_index < 0)
+  //     curr_pnum = desired_inode->ptrs[1];
+  //   else
+  //     curr_pnum = *(iptr_page + iptr_index);
 
-    assert(curr_pnum > 0);
+  //   assert(curr_pnum > 0);
 
-    desired_data_block = pages_get_page(curr_pnum);
-    memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
-    bytes_to_read -= min(bytes_to_read, 4096);
+  //   desired_data_block = pages_get_page(curr_pnum);
+  //   memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
+  //   bytes_to_read -= min(bytes_to_read, 4096);
 
-    iptr_index++;
-  }
+  //   iptr_index++;
+  // }
 
-  rv = desired_inode->size - bytes_to_read;
+  // rv = desired_inode->size - bytes_to_read;
 
   int bytes_read = 0;
 
-  int pages_to_read = bytes_to_pages(size);
+  int pages_to_read = bytes_to_pages(offset + size);
 
   void *desired_data_block;
   for (int ptr_index = bytes_to_pages(offset); ptr_index < pages_to_read;
