@@ -256,8 +256,8 @@ int nufs_rename(const char *from, const char *to) {
   directory_put(parent_inode, get_filename_from_path(to), desired_inum);
   directory_delete(parent_inode, filename);
 
-  assert(directory_lookup(parent_inode, from) < 0);
-  assert(directory_lookup(parent_inode, to) > 0);
+  assert(directory_lookup(parent_inode, filename) < 0);
+  assert(directory_lookup(parent_inode, get_filename_from_path(to)) > 0);
 
   printf("rename(%s => %s) -> %d\n", from, to, rv);
   return rv;
