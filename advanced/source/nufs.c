@@ -372,7 +372,9 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   // offset is how many bytes we've written so far
   int ptr_index = bytes_to_pages(offset);
+
   printf("ptr_index: %ld\n", ptr_index);
+
   void *desired_data_block;
   if (ptr_index == 0) {
     printf("HERE");

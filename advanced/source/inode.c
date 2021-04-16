@@ -60,10 +60,12 @@ inode *get_inode(int inum) { return get_root_inode() + inum; }
 // Returns 0 if successful, -1 if not
 int grow_inode(inode *node, int size) {
   int pages_needed = bytes_to_pages(size);
+
   assert(pages_needed > 0);
 
   printf("growing inode by %ld pages\n", pages_needed);
-  int *iptr_arr = pages_get_page(node->iptr);
+
+  int *iptr_arr = (int *)pages_get_page(node->iptr);
   int iptr_index = 0;
   while (pages_needed > 0 && iptr_index < 256) {
     if (node->ptrs[1] == 0) {
@@ -73,7 +75,7 @@ int grow_inode(inode *node, int size) {
     }
     if (node->iptr == 0) {
       node->iptr = alloc_page();
-      iptr_arr = pages_get_page(node->iptr);
+      iptr_arr = (int *)pages_get_page(node->iptr);
     }
     int *curr_pnum_ptr = iptr_arr + iptr_index;
     *curr_pnum_ptr = alloc_page();
