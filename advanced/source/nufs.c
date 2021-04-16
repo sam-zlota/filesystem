@@ -300,12 +300,15 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int parent_inum = tree_lookup(path);
 
   if (parent_inum < 0) {
+    printf("read eror: p");
     return parent_inum;
   }
   inode *parent_inode = get_inode(parent_inum);
   char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
   if (desired_inum < 0) {
+    printf("read eror: i");
+
     return desired_inum;
   }
 
