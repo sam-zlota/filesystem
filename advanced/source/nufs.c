@@ -159,14 +159,9 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   inode *new_inode = get_inode(new_inum);
 
   // TODO: check mode, and then call dir init if we are making a directory
-  new_inode->mode = 100644;
+  new_inode->mode = mode;
   new_inode->refs = 1;
   new_inode->size = 0;
-  int first_free_pnum = alloc_page();
-  if (first_free_pnum == -1) {
-    printf("exiting mknod: pnum error\n");
-    return first_free_pnum;
-  }
 
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
