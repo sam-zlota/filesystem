@@ -337,11 +337,45 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
     return desired_inum;
   }
   inode *desired_inode = get_inode(desired_inum);
-  // TODO: handle multiple pages
-  int desired_page_num = desired_inode->ptrs[0];
-  void *desired_data_block = pages_get_page(desired_page_num);
-  memcpy(desired_data_block, buf, size);
-  desired_inode->size += size;
+  // TODO: handle OFFSET
+  // TODO: handle rewrites, overwriting
+
+  int bytes_written = 0;
+  int curr_pnum = desired_inode->ptrs[0];
+  void *desired_data_block = pages_get_page(curr_pnum);
+
+  memcpy(desired_data_block, buf, min(size, 4096));
+  bytes_written += min(size, 4096)
+
+      int iptr_index = -1;
+  int *iptr_page = (int *)pages_get_page(dd->iptr);
+
+  // this will run until it finds free block or runs out of memory
+  while (bytes_written < size) {
+    if (iptr_index < 0)
+      curr_pnum = dd->ptrs[1];
+    else
+      curr_pnum = *(iptr_page + iptr_index);
+
+    if (curr_pnum == 0) {
+      // should always grow by a full page TODO:
+      rv = grow_inode(dd, size - bytes_written);
+      if (rv < 0) {
+        // we ran out of memory
+        printf("exiting directory put: failure\n");
+        return -ENOSPC;
+      }
+      desired_data_block = pages_get_page(curr_pnum);
+      memcpy(desired_data_block, buf, min(size, 4096));
+      bytes_written += min(size, 4096)
+    }
+
+    iptr_index++;
+  }
+
+  desired_page_num
+
+      desired_inode->size += size;  // TODO: plus equals?
   rv = size;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
