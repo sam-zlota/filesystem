@@ -368,16 +368,12 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   inode *desired_inode = get_inode(desired_inum);
 
   int bytes_written = 0;
-  printf("calculating: ptr_index\n");
 
   // offset is how many bytes we've written so far
   int ptr_index = bytes_to_pages(offset);
 
-  printf("ptr_index: %ld\n", ptr_index);
-
   void *desired_data_block;
   if (ptr_index == 0) {
-    printf("HERE");
     desired_data_block = pages_get_page(desired_inode->ptrs[0]);
   }
   if (ptr_index == 1) {
@@ -404,9 +400,9 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   }
 
   memcpy(desired_data_block, buf, min(size, 4096));
-  bytes_written += min(size, 4096);
+  bytes_written = min(size, 4096);
 
-  desired_inode->size += bytes_written;
+  // desired_inode->size += bytes_written;
   rv = bytes_written;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
