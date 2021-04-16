@@ -399,7 +399,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       iptr_page = (int *)pages_get_page(desired_inode->iptr);
     }
     desired_data_block = pages_get_page(curr_pnum);
-    memcpy(desired_data_block, buf, min(size - bytes_written, 4096));
+    memcpy(desired_data_block, buf + offset, min(size - bytes_written, 4096));
     bytes_written += min(size - bytes_written, 4096);
 
     iptr_index++;
