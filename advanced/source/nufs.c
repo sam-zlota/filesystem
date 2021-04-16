@@ -390,7 +390,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
     if (desired_inode->iptr == 0) {
       grow_inode(desired_inode, size);
     }
-    iptr_arr = pages_get_page(desired_inode->iptr);
+    iptr_arr = (int *)pages_get_page(desired_inode->iptr);
 
     if (iptr_arr[iptr_index] == 0) {
       grow_inode(desired_inode, size);

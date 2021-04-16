@@ -143,9 +143,6 @@ int directory_put(inode* dd, const char* name, int inum) {
 
   new_dirent->inum = inum;
 
-  // char buf[DIR_NAME] = NULL;
-  // char buf[DIR_NAME];
-  // strcpy(buf, name);
   strcpy(new_dirent->name, name);
 
   assert(strcmp(new_dirent->name, name) == 0);
