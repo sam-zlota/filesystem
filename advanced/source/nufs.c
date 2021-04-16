@@ -365,17 +365,15 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
         printf("exiting directory put: failure\n");
         return -ENOSPC;
       }
-      desired_data_block = pages_get_page(curr_pnum);
-      memcpy(desired_data_block, buf, min(size, 4096));
-      bytes_written += min(size, 4096)
     }
+    desired_data_block = pages_get_page(curr_pnum);
+    memcpy(desired_data_block, buf, min(size - bytes_written, 4096));
+    bytes_written += min(size - bytes_written, 4096)
 
-    iptr_index++;
+        iptr_index++;
   }
 
-  desired_page_num
-
-      desired_inode->size += size;  // TODO: plus equals?
+  desired_inode->size += size;  // TODO: plus equals?, handle succesive writes
   rv = size;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
