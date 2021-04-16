@@ -324,6 +324,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   // this will run until it finds free block or runs out of memory
   while (bytes_to_read > 0) {
+    printf("here!!");
     if (iptr_index < 0)
       curr_pnum = desired_inode->ptrs[1];
     else
@@ -376,6 +377,8 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   // this will run until it finds free block or runs out of memory
   while (bytes_written < size) {
+    printf("here!!");
+
     if (iptr_index < 0)
       curr_pnum = desired_inode->ptrs[1];
     else
