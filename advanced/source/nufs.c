@@ -311,16 +311,9 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   inode *desired_inode = get_inode(desired_inum);
 
-  int desired_page_num = desired_inode->ptrs[0];
-
-  void *desired_data_block = pages_get_page(desired_page_num);
-
-  memcpy(buf, desired_data_block + offset, size);
-  rv = size;
-
   int bytes_to_read = desired_inode->size;
-
   int curr_pnum = desired_inode->ptrs[0];
+
   void *desired_data_block = pages_get_page(curr_pnum);
   memcpy(desired_data_block, buf, min(bytes_to_read, 4096));
   bytes_to_read -= min(bytes_to_read, 4096);
