@@ -61,6 +61,7 @@ int alloc_page() {
     if (!bitmap_get(pbm, ii)) {
       bitmap_put(pbm, ii, 1);
       // printf("+ alloc_page() -> %d\n", ii);
+      memset(pages_get_page(ii), 0, 4096);
       return ii;
     }
   }
