@@ -251,7 +251,7 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
 
 // will put all the contents of directory into an slist
 slist* directory_list(const char* path) {
-  printf("entered directory list\n");
+  printf("entered directory list with path: %s\n", path);
 
   int parent_inum = tree_lookup(path);
   inode* dd = get_inode(parent_inum);
