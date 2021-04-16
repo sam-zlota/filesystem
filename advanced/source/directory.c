@@ -257,32 +257,21 @@ slist* directory_list(const char* path) {
   inode* dd = get_inode(parent_inum);
   int curr_pnum = dd->ptrs[0];
 
+  // TODO refactor this
   slist* contents = s_cons(".", NULL);
-  int starting_index = 1;
-  if (parent_inum > 0) {
-    contents = s_cons("..", contents);
-    starting_index = 2;
-  }
-
-  contents = cons_page_contents(curr_pnum, starting_index, contents);
+  contents = cons_page_contents(curr_pnum, 1, contents);
 
   int iptr_index = 0;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
   curr_pnum = dd->ptrs[1];
-  starting_index = 0;
 
   // this will run until it finds matching direntry or checks all direntries
-  while (!is_block_empty(curr_pnum)) {
-    contents = cons_page_contents(curr_pnum, starting_index, contents);
+  while (curr_pnum != 0) {
+    contents = cons_page_contents(curr_pnum, 0, contents);
     curr_pnum = *(iptr_page + iptr_index);
-    if (curr_pnum == 0) {
-      // have reached end
-      printf("breaking dir list\n");
-      break;
-    }
     iptr_index++;
   }
 
   printf("successfully exited directory list\n");
-  return contents;
+  return s_reverse(contents);
 }

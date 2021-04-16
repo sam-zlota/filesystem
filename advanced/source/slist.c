@@ -52,3 +52,18 @@ slist* s_split(const char* text, char delim) {
 
   return s_cons(part, rest);
 }
+
+// Reverses the given slist, then returns it
+slist* s_reverse(slist* original)
+{
+  slist* reversed = NULL;
+  slist* og = original;
+
+  while (og != NULL)
+  {
+    reversed = s_cons(og->data, reversed);
+    og = og->next;
+  }
+
+  return reversed;
+}
