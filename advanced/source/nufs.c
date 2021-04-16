@@ -324,7 +324,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   // this will run until it finds free block or runs out of memory
   while (bytes_to_read > 0) {
     if (iptr_index < 0)
-      curr_pnum = dd->ptrs[1];
+      curr_pnum = desired_inode->ptrs[1];
     else
       curr_pnum = *(iptr_page + iptr_index);
 
