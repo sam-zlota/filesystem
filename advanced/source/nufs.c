@@ -314,6 +314,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int bytes_to_read = desired_inode->size;
   int curr_pnum = desired_inode->ptrs[0];
 
+  assert(curr_pnum > 0);
   void *desired_data_block = pages_get_page(curr_pnum);
   memcpy(desired_data_block, buf, min(bytes_to_read, 4096));
   bytes_to_read -= min(bytes_to_read, 4096);
@@ -365,6 +366,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   int bytes_written = 0;
   int curr_pnum = desired_inode->ptrs[0];
+  assert(curr_pnum > 0);
   void *desired_data_block = pages_get_page(curr_pnum);
   memcpy(desired_data_block, buf, min(size, 4096));
   bytes_written += min(size, 4096);
