@@ -79,6 +79,8 @@ int grow_inode(inode *node, int size) {
     }
     int *curr_pnum_ptr = iptr_arr + iptr_index;
     *curr_pnum_ptr = alloc_page();
+    printf("iprtr index: %ld, new page: %ld\n", iptr_index, *curr_pnum_ptr);
+
     pages_needed--;
     iptr_index++;
   }
