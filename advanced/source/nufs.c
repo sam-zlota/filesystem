@@ -323,17 +323,8 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
   bytes_to_read -= min(bytes_to_read, 4096);
 
-
   int iptr_index = -1;
   int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
-
-
-  char buf2[5];
-  strncpy(buf2, (char*)(desired_data_block), 5);
-  printf("reading: %s\n", buf2);
-  
-  printf("actual: %s\n", buf);
-
 
   // this will run until it finds free block or runs out of memory
   while (bytes_to_read > 0) {
@@ -346,7 +337,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     assert(curr_pnum > 0);
 
     desired_data_block = pages_get_page(curr_pnum);
-    memcpy(buf,desired_data_block, min(bytes_to_read, 4096));
+    memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
     bytes_to_read -= min(bytes_to_read, 4096);
 
     iptr_index++;
