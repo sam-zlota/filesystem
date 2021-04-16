@@ -12,24 +12,6 @@
 #include "slist.h"
 #include "util.h"
 
-static int IPTR_PAGE_SIZE = 4096 / sizeof(int);
-
-/*
-typedef struct direntry {
-  char name[DIR_NAME];
-  int inum;
-} direntry;
-
-void directory_init();
-int directory_lookup(inode* dd, const char* name);
-int tree_lookup(const char* path);
-int directory_put(inode* dd, const char* name, int inum);
-int directory_delete(inode* dd, const char* name);
-slist* directory_list(const char* path);
-void print_directory(inode* dd);*/
-
-// TODO: make sure to call bitmap helpers, alloc, free!!!!
-
 // returns direntry index of direntry with name at block at page pnum
 int find_in_block(int pnum, const char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
