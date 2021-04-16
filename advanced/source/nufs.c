@@ -352,6 +352,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   void *desired_data_block;
   for (int ptr_index = bytes_to_pages(offset); ptr_index < pages_to_read;
        ptr_index++) {
+    printf("entered\n");
     if (ptr_index == 0) {
       desired_data_block = pages_get_page(desired_inode->ptrs[0]);
     }
