@@ -241,20 +241,20 @@ int nufs_rmdir(const char *path) {
 int nufs_rename(const char *from, const char *to) {
   int rv = 0;
   printf("entered rename with from: %s to: %s\n", from, to);
-  int parent_inum = tree_lookup(path);
+  int parent_inum = tree_lookup(from);
   if (parent_inum < 0) {
     return parent_inum;
   }
 
   inode *parent_inode = get_inode(parent_inum);
-  char *filename = get_filename_from_path(path);
+  char *filename = get_filename_from_path(from);
 
   int desired_inum = directory_lookup(parent_inode, filename);
 
   inode *desired_inode = get_inode(desired_inum);
 
-  directory_put(parent_inode, to, desired_inum);
-  directory_delete(parent_inode, from);
+  directory_put(parent_inode, get_filename_from_path(to), desired_inum);
+  directory_delete(parent_inode, filename);
 
   assert(directory_lookup(parent_inode, from) < 0);
   assert(directory_lookup(parent_inode, to) > 0);
