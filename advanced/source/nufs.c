@@ -366,46 +366,38 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
     return desired_inum;
   }
   inode *desired_inode = get_inode(desired_inum);
-  // TODO: handle OFFSET
-  // TODO: handle rewrites, overwriting
 
   int bytes_written = 0;
-  int curr_pnum = desired_inode->ptrs[0];
-  assert(curr_pnum > 0);
-  void *desired_data_block = pages_get_page(curr_pnum);
-  memcpy(&desired_data_block[offset], &buf[offset], min(size, 4096));
-  bytes_written += min(size, 4096);
-
-  int iptr_index = -1;
-  int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
-
-  // this will run until it finds free block or runs out of memory
-  while (bytes_written < size) {
-    printf("here!!");
-
-    if (iptr_index < 0)
-      curr_pnum = desired_inode->ptrs[1];
-    else
-      curr_pnum = *(iptr_page + iptr_index);
-
-    if (curr_pnum == 0) {
-      // should always grow by a full page or more? TODO:
-      rv = grow_inode(desired_inode, size - bytes_written);
-      if (rv < 0) {
-        // we ran out of memory
-        printf("exiting write: out of memory\n");
-        return -ENOSPC;
-      }
-      iptr_page = (int *)pages_get_page(desired_inode->iptr);
+  // offset is how many bytes we've written so far
+  int ptr_index = bytes_to_pages(offset);
+  void *desired_data_block;
+  if (ptr_index == 1) {
+    desired_data_block = pages_get_page(desired_inode->ptrs[0]);
+  }
+  if (ptr_index == 2) {
+    if (desired_inode->ptrs[1] == 0) {
+      grow_inode(desired_inode, size);
     }
-    desired_data_block = pages_get_page(curr_pnum);
-    memcpy(desired_data_block, buf + offset, min(size - bytes_written, 4096));
-    bytes_written += min(size - bytes_written, 4096);
+    desired_data_block = pages_get_page(desired_inode->ptrs[1]);
+  }
+  if (ptr_index > 2) {
+    int iptr_index = ptr_index - 3;
+    int *iptr_arr;
+    if (desired_inode->iptr == 0) {
+      grow_inode(desired_inode, size);
+    }
+    iptr_arr = pages_get_page(desired_inode->iptr);
 
-    iptr_index++;
+    if (iptr_arr[iptr_index] == 0) {
+      grow_inode(desired_inode, size);
+    }
+    desired_data_block = pages_get_page(iptr_arr[iptr_index]);
   }
 
-  desired_inode->size = size;  // TODO: plus equals?, handle succesive writes
+  memcpy(desired_data_block, buf, min(size, 4096));
+  bytes_written += min(size, 4096);
+
+  desired_inode->size += bytes_written;
   rv = bytes_written;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
