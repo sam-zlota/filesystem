@@ -295,7 +295,7 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-  printf("entered read\n");
+  printf("entered read with size: %ld\n", size);
   int rv = 0;
   int parent_inum = tree_lookup(path);
 
@@ -348,7 +348,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 // Actually write data
 int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
-  printf("entered write\n");
+  printf("entered write with size: %ld\n", size);
   int rv = 0;
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
