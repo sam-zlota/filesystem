@@ -303,7 +303,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     printf("read eror: p");
     return parent_inum;
   }
-  printf("HERE1\n");
 
   inode *parent_inode = get_inode(parent_inum);
   char *filename = get_filename_from_path(path);
@@ -314,7 +313,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     return desired_inum;
   }
 
-  printf("HERE2\n");
   inode *desired_inode = get_inode(desired_inum);
 
   int bytes_to_read = desired_inode->size;
@@ -325,7 +323,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   memcpy(desired_data_block, buf, min(bytes_to_read, 4096));
   bytes_to_read -= min(bytes_to_read, 4096);
 
-  printf("HERE3\n");
 
   int iptr_index = -1;
   int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
@@ -333,7 +330,10 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   char buf2[5];
   strncpy(buf2, (char*)(desired_data_block), 5);
-  printf("reading: %s", buf2);
+  printf("reading: %s\n", buf2);
+  
+  printf("actual: %s\n", buf);
+
 
   // this will run until it finds free block or runs out of memory
   while (bytes_to_read > 0) {
