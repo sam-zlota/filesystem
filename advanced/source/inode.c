@@ -61,15 +61,12 @@ int grow_inode(inode *node, int size) {
   int pages_needed = bytes_to_pages(size);
   assert(pages_needed > 0);
 
-  // This variable represents how much more space we've allocated for the
-  // inode.
-  // When this number is >= size, then we know we should return 0.
-
   int *iptr_arr = pages_get_page(node->iptr);
   int iptr_index = 0;
   while (pages_needed > 0 && iptr_index < 256) {
     if (node->ptrs[1] == 0) {
       node->ptrs[1] = alloc_page();
+      pages_needed--;
       continue;
     }
     if (node->iptr == 0) {
@@ -79,6 +76,7 @@ int grow_inode(inode *node, int size) {
     int *curr_pnum_ptr = iptr_arr + iptr_index;
     *curr_pnum_ptr = alloc_page();
     pages_needed--;
+    iptr_index++;
   }
   if (pages_needed > 0) {
     return -ENOSPC;
