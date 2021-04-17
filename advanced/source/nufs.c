@@ -35,6 +35,8 @@ char *get_filename_from_path(const char *path) {
 
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 
+// TODO: need to implement: init dir (to init directories other than root),
+// shrink inode(coalescing), fix read and write
 
 // implementation for: man 2 access
 // Checks if a file exists.
@@ -74,6 +76,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   inode *desired_inode = get_inode(desired_inum);
+  // TODO: handle adding directories
   st->st_mode = desired_inode->mode;
   st->st_size = desired_inode->size;
   st->st_uid = getuid();
@@ -92,23 +95,19 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rv;
 
   // will return contents of leaf directory as linkedlist, just their names
+  // TODO: hanlde root directory list
+  // TODO: write init_dir
+  // TODO: handle ".." and "." for all non-root directories
+  // TODO: make sure directory_list behaves correctly
   slist *contents = directory_list(path);
-  
-  // Guarantee one check, in case we're in root
-  rv = nufs_getattr(contents->data, &st);
-  if (rv < 0) {
-    return rv;
-  }
-  
-  while (contents->next) {
+  while (contents) {
     rv = nufs_getattr(contents->data, &st);
     if (rv < 0) {
       return rv;
     }
+    filler(buf, contents->data, &st, 0);
     contents = contents->next;
   }
-
-  filler(buf, contents->data, &st, 0);
 
   printf("readdir(%s) exited -> %d\n", path, rv);
   return rv;
@@ -117,6 +116,8 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 // mknod makes a filesystem object like a file or directory
 // called for: man 2 open, man 2 link
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
+  // TODO: ENOSPC handle out of space
+  // TODO: check mode to see if dir, if so, init dir
   printf("called mknod with path: %s\n", path);
   int rv = 0;
 
@@ -127,8 +128,10 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   }
   inode *parent_inode = get_inode(parent_inum);
 
+  // might be a directory name
   char *filename = get_filename_from_path(path);
 
+  // TODO: make sure alloc_inum works
   int new_inum = alloc_inode();
   if (new_inum < 0) {
     printf("exiting mknod: failure: alloc inum\n");
@@ -142,10 +145,13 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     return -ENOSPC;
   }
 
+  // TODO:should this be done in directory put?
   parent_inode->size += sizeof(direntry);
+  // TODO: directory size is it the sum of the size of its contents?
 
   inode *new_inode = get_inode(new_inum);
 
+  // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = mode;
   new_inode->refs = 1;
   new_inode->size = 0;
@@ -164,22 +170,9 @@ int nufs_mkdir(const char *path, mode_t mode) {
   inode *parent_inode = get_inode(parent_inum);
   int desired_inum =
       directory_lookup(parent_inode, get_filename_from_path(path));
+  printf("new inum: %ld\n", desired_inum);
 
-  //TODO:
-  
-
-  inode *dir_inode = get_inode(desired_inum);
-
-  direntry* dir_arr = (direntry*)pages_get_page(dir_inode->ptrs[0]);
-
-  strcpy(dir_arr->name, ".\0");
-  dir_arr->inum = desired_inum;
-
-  direntry* parent_dirent = &dir_arr[1];
-
-  strcpy(parent_dirent->name, "..\0");
-  parent_dirent->inum = parent_inum;
-
+  // TODO: should we call dir init here? or in mknod
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
 }
