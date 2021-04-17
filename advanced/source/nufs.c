@@ -350,6 +350,9 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int pages_start = bytes_to_pages(offset); //inclusive
   int pages_end = bytes_to_pages(offset + size); //exclusive
 
+  printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
+
+
   void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
     if (ii <=1) {
