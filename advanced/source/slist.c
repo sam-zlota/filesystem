@@ -7,6 +7,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
+char *get_filename_from_path(const char *path) {
+  slist *path_list = s_split(path, '/');
+  while (path_list->next) {
+    path_list = path_list->next;
+  }
+  return path_list->data;
+}
+
 slist* s_cons(const char* text, slist* rest) {
   slist* xs = malloc(sizeof(slist));
   xs->data = strdup(text);
