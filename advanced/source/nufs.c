@@ -347,20 +347,19 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_to_read = bytes_to_pages(offset + size);
+  int pages_start = bytes_to_pages(offset); //inclusive
+  int pages_end = bytes_to_pages(offset + size); //exclusive
 
-  void *desired_data_block;
-  for (int ptr_index = bytes_to_pages(offset); ptr_index < pages_to_read;
-       ptr_index++) {
-    if (ptr_index <=1) {
-      assert(desired_inode->ptrs[ptr_index] != 0);
-      desired_data_block = pages_get_page(desired_inode->ptrs[ptr_index]);
+  void *desired_data_block == NULL;
+  for (int ii = pages_start; ii < pages_end; ii++) {
+    if (ii <=1) {
+      assert(desired_inode->ptrs[ii] != 0);
+      desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
     }else {
-      int iptr_index = ptr_index - 2;
-      assert(desired_inode->iptr != 0);
+      int jj = ii - 2;
       int *iptr_arr = (int *)pages_get_page(desired_inode->iptr);
-      assert(iptr_arr[iptr_index] != 0);
-      desired_data_block = pages_get_page(iptr_arr[iptr_index]);
+      assert(iptr_arr[jj] != 0);
+      desired_data_block = pages_get_page(iptr_arr[jj]);
     }
     memcpy(buf, desired_data_block, min(size, 4096));
     bytes_read += min(size, 4096);
@@ -393,14 +392,14 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
 
   //our code will break otherwise
-  assert(offset % 4096 == 0 && size % 4096 == 0)
+  assert(offset % 4096 == 0 && size % 4096 == 0);
 
-  int bytes_read = 0;
+  int bytes_written = 0;
 
   int pages_start = bytes_to_pages(offset); //starting index, inclusive
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
 
-  void *desired_data_block;
+  void *desired_data_block = NULL;
   for (int ii  = pages_start; ii < pages_end; ii++) {
     if (ii <=1) {
       if(desired_inode->ptrs[ii] == 0) {
@@ -421,87 +420,88 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       assert(iptr_arr[iptr_index] != 0);
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
-    memcpy(desired_data_block, min(size, 4096));
-    bytes_read += min(size, 4096);
-    if(bytes_read % 4096 != 0) {
+    assert(desired_inode != NULL);
+    memcpy(desired_data_block, buf, min(size, 4096));
+    bytes_written += min(size, 4096);
+    if(bytes_written % 4096 != 0) {
       assert(ii == pages_end - 1);
     }
   }
   // desired_inode->size += bytes_written;
-  assert(bytes_read == size);
-  rv = bytes_read;
+  assert(bytes_written == size);
+  rv = bytes_written;
 
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  int bytes_written = 0;
-
-  // offset is how many bytes we've written so far
-  int ptr_index = bytes_to_pages(offset);
-
-  void *desired_data_block;
-  if (ptr_index == 0) {
-    desired_data_block = pages_get_page(desired_inode->ptrs[0]);
-  }
-  if (ptr_index == 1) {
-    if (desired_inode->ptrs[1] == 0) {
-      grow_inode(desired_inode, size);
-    }
-    desired_data_block = pages_get_page(desired_inode->ptrs[1]);
-  }
-  if (ptr_index > 1) {
-    int iptr_index = ptr_index - 2;
-    int *iptr_arr;
-    if (desired_inode->iptr == 0) {
-      grow_inode(desired_inode, size);
-    }
-    assert(desired_inode->iptr != 0);
-    iptr_arr = (int *)pages_get_page(desired_inode->iptr);
-
-    if (iptr_arr[iptr_index] == 0) {
-      grow_inode(desired_inode, size);
-    }
-    assert(iptr_arr[iptr_index] != 0);
-
-    desired_data_block = pages_get_page(iptr_arr[iptr_index]);
-  }
-  printf("writing\n");
-  memcpy(desired_data_block, buf, min(size, 4096));
-  bytes_written = min(size, 4096);
-
-  // desired_inode->size += bytes_written;
-  rv = bytes_written;
-
-  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-  return rv;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // int bytes_written = 0;
+
+  // // offset is how many bytes we've written so far
+  // int ptr_index = bytes_to_pages(offset);
+
+  // void *desired_data_block;
+  // if (ptr_index == 0) {
+  //   desired_data_block = pages_get_page(desired_inode->ptrs[0]);
+  // }
+  // if (ptr_index == 1) {
+  //   if (desired_inode->ptrs[1] == 0) {
+  //     grow_inode(desired_inode, size);
+  //   }
+  //   desired_data_block = pages_get_page(desired_inode->ptrs[1]);
+  // }
+  // if (ptr_index > 1) {
+  //   int iptr_index = ptr_index - 2;
+  //   int *iptr_arr;
+  //   if (desired_inode->iptr == 0) {
+  //     grow_inode(desired_inode, size);
+  //   }
+  //   assert(desired_inode->iptr != 0);
+  //   iptr_arr = (int *)pages_get_page(desired_inode->iptr);
+
+  //   if (iptr_arr[iptr_index] == 0) {
+  //     grow_inode(desired_inode, size);
+  //   }
+  //   assert(iptr_arr[iptr_index] != 0);
+
+  //   desired_data_block = pages_get_page(iptr_arr[iptr_index]);
+  // }
+  // printf("writing\n");
+  // memcpy(desired_data_block, buf, min(size, 4096));
+  // bytes_written = min(size, 4096);
+
+  // // desired_inode->size += bytes_written;
+  // rv = bytes_written;
+
+  // printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  // return rv;
+
 
 // Update the timestamps on a file or directory.
 int nufs_utimens(const char *path, const struct timespec ts[2]) {
