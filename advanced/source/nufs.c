@@ -407,7 +407,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
-  for (int ii  = pages_start; ii <= pages_end; ii++) {
+  for (int ii  = pages_start; ii < pages_end; ii++) {
     if (ii <=1) {
       if(desired_inode->ptrs[ii] == 0) {
         grow_inode(desired_inode, size);
