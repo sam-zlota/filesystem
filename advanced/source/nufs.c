@@ -350,8 +350,11 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int pages_start = bytes_to_pages(offset); //inclusive
   int pages_end = bytes_to_pages(offset + size); //exclusive
 
+  printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
+
+
   void *desired_data_block = NULL;
-  for (int ii = pages_start; ii < pages_end; ii++) {
+  for (int ii = pages_start; ii <= pages_end; ii++) {
     if (ii <=1) {
       assert(desired_inode->ptrs[ii] != 0);
       desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
@@ -361,7 +364,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
       assert(iptr_arr[jj] != 0);
       desired_data_block = pages_get_page(iptr_arr[jj]);
     }
-    memcpy(buf, desired_data_block, min(size, 4096));
+    memcpy(buf+bytes_read, desired_data_block, min(size, 4096));
     bytes_read += min(size, 4096);
   }
   // desired_inode->size += bytes_written;
@@ -398,7 +401,10 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   int bytes_written = 0;
 
   int pages_start = bytes_to_pages(offset); //starting index, inclusive
+  
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
+
+  printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
   for (int ii  = pages_start; ii < pages_end; ii++) {
@@ -423,7 +429,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
     assert(desired_data_block != NULL);
-    memcpy(desired_data_block, buf, min(size, 4096));
+    memcpy(desired_data_block, buf+bytes_written, min(size, 4096));
     bytes_written += min(size, 4096);
     if(bytes_written % 4096 != 0) {
       assert(ii == pages_end - 1);
@@ -433,7 +439,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   assert(bytes_written == size);
   rv = bytes_written;
 
-  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
 

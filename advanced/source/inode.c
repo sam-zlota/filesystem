@@ -70,6 +70,8 @@ int grow_inode(inode *node, int size) {
   while (pages_needed > 0 && iptr_index < 256) {
     if (node->ptrs[1] == 0) {
       node->ptrs[1] = alloc_page();
+      node->size +=4096;
+
       pages_needed--;
       continue;
     }
@@ -80,6 +82,7 @@ int grow_inode(inode *node, int size) {
     int *curr_pnum_ptr = iptr_arr + iptr_index;
     if (*curr_pnum_ptr == 0) {
       *curr_pnum_ptr = alloc_page();
+      node->size +=4096;
       printf("iprtr index: %ld, new page: %ld\n", iptr_index, *curr_pnum_ptr);
       pages_needed--;
     }
