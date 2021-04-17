@@ -398,7 +398,10 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   int bytes_written = 0;
 
   int pages_start = bytes_to_pages(offset); //starting index, inclusive
+  
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
+
+  printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
   for (int ii  = pages_start; ii < pages_end; ii++) {
@@ -432,7 +435,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   assert(bytes_written == size);
   rv = bytes_written;
 
-  printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
+  printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 
 }
