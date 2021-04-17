@@ -100,14 +100,22 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   // TODO: handle ".." and "." for all non-root directories
   // TODO: make sure directory_list behaves correctly
   slist *contents = directory_list(path);
-  while (contents) {
+  
+  // Guarantee one check, in case we're in root
+  rv = nufs_getattr(contents->data, &st);
+  if (rv < 0) {
+    return rv;
+  }
+  
+  while (contents->next) {
     rv = nufs_getattr(contents->data, &st);
     if (rv < 0) {
       return rv;
     }
-    filler(buf, contents->data, &st, 0);
     contents = contents->next;
   }
+
+  filler(buf, contents->data, &st, 0);
 
   printf("readdir(%s) exited -> %d\n", path, rv);
   return rv;
