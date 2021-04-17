@@ -162,7 +162,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
 
   inode *dir_inode = get_inode(desired_inum);
 
-  direntry* dir_arr = (direntry*)pages_get_page(dir_inode->ptr[0]);
+  direntry* dir_arr = (direntry*)pages_get_page(dir_inode->ptrs[0]);
 
   strcpy(dir_arr->name, ".\0");
   dir_arr->inum = desired_inum;
