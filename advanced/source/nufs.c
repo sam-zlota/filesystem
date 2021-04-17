@@ -364,7 +364,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
       assert(iptr_arr[jj] != 0);
       desired_data_block = pages_get_page(iptr_arr[jj]);
     }
-    memcpy(buf, desired_data_block, min(size, 4096));
+    memcpy(buf+offset, desired_data_block, min(size, 4096));
     bytes_read += min(size, 4096);
   }
   // desired_inode->size += bytes_written;
@@ -428,7 +428,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
     assert(desired_data_block != NULL);
-    memcpy(desired_data_block, buf, min(size, 4096));
+    memcpy(desired_data_block, buf+offset, min(size, 4096));
     bytes_written += min(size, 4096);
     if(bytes_written % 4096 != 0) {
       assert(ii == pages_end - 1);
