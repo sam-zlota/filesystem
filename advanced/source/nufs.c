@@ -167,7 +167,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
   strcpy(dir_arr->name, ".\0");
   dir_arr->inum = desired_inum;
 
-  direntry* parent_dirent = dir_arr[1];
+  direntry* parent_dirent = &dir_arr[1];
 
   strcpy(parent_dirent->name, "..\0");
   parent_dirent->inum = parent_inum;
