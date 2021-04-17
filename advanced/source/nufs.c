@@ -179,9 +179,6 @@ int nufs_mkdir(const char *path, mode_t mode) {
 int nufs_unlink(const char *path) {
   int rv = 0;
   printf("entered unlink\n");
-  // TODO: handle symbolic links and hard links
-  // this is broken so it will fail
-  // int rv = -1;
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
     printf("exiting unlink: failure, tree_lookup\n");
@@ -202,17 +199,7 @@ int nufs_unlink(const char *path) {
   printf("calling delete with refs: %ld\n", desired_inode->refs);
 
   rv = directory_delete(parent_inode, filename);
-  // TODO: do we remove it from the directory but not delete the inode?
 
-  // TODO: what is the expected behavior here?, will it remove from this
-  // directory but not delete the inode?
-  // if (desired_inode->refs == 0) {
-  //   // ERASING
-  //
-  //   free_page(desired_page_num);
-  //   free_inode(desired_inum);
-  //   memset(desired_direntry, 0, sizeof(direntry));
-  // }
 
   printf("unlink(%s) -> %d\n", path, rv);
   return rv;
@@ -314,36 +301,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   inode *desired_inode = get_inode(desired_inum);
 
-  // int bytes_to_read = desired_inode->size;
-  // int curr_pnum = desired_inode->ptrs[0];
-
-  // assert(curr_pnum > 0);
-  // void *desired_data_block = pages_get_page(curr_pnum);
-  // memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
-  // bytes_to_read -= min(bytes_to_read, 4096);
-
-  // int iptr_index = -1;
-  // int *iptr_page = (int *)pages_get_page(desired_inode->iptr);
-
-  // // this will run until it finds free block or runs out of memory
-  // while (bytes_to_read > 0) {
-  //   printf("here!!");
-  //   if (iptr_index < 0)
-  //     curr_pnum = desired_inode->ptrs[1];
-  //   else
-  //     curr_pnum = *(iptr_page + iptr_index);
-
-  //   assert(curr_pnum > 0);
-
-  //   desired_data_block = pages_get_page(curr_pnum);
-  //   memcpy(buf, desired_data_block, min(bytes_to_read, 4096));
-  //   bytes_to_read -= min(bytes_to_read, 4096);
-
-  //   iptr_index++;
-  // }
-
-  // rv = desired_inode->size - bytes_to_read;
-
   int bytes_read = 0;
 
   int pages_start = bytes_to_pages(offset); //inclusive
@@ -441,72 +398,6 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // int bytes_written = 0;
-
-  // // offset is how many bytes we've written so far
-  // int ptr_index = bytes_to_pages(offset);
-
-  // void *desired_data_block;
-  // if (ptr_index == 0) {
-  //   desired_data_block = pages_get_page(desired_inode->ptrs[0]);
-  // }
-  // if (ptr_index == 1) {
-  //   if (desired_inode->ptrs[1] == 0) {
-  //     grow_inode(desired_inode, size);
-  //   }
-  //   desired_data_block = pages_get_page(desired_inode->ptrs[1]);
-  // }
-  // if (ptr_index > 1) {
-  //   int iptr_index = ptr_index - 2;
-  //   int *iptr_arr;
-  //   if (desired_inode->iptr == 0) {
-  //     grow_inode(desired_inode, size);
-  //   }
-  //   assert(desired_inode->iptr != 0);
-  //   iptr_arr = (int *)pages_get_page(desired_inode->iptr);
-
-  //   if (iptr_arr[iptr_index] == 0) {
-  //     grow_inode(desired_inode, size);
-  //   }
-  //   assert(iptr_arr[iptr_index] != 0);
-
-  //   desired_data_block = pages_get_page(iptr_arr[iptr_index]);
-  // }
-  // printf("writing\n");
-  // memcpy(desired_data_block, buf, min(size, 4096));
-  // bytes_written = min(size, 4096);
-
-  // // desired_inode->size += bytes_written;
-  // rv = bytes_written;
-
-  // printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
-  // return rv;
 
 
 // Update the timestamps on a file or directory.
@@ -607,10 +498,7 @@ void init_root() {
 
 int main(int argc, char *argv[]) {
   assert(argc > 2 && argc < 6);
-  // printf("TODO: mount %s as data file\n", argv[--argc]);
 
-  // char *name = "/filename/second/third/";
-  // printf("%s -> %s\n", name, get_filename_from_path(name));
   pages_init(argv[--argc]);
   init_root();
   // storage_init(argv[--argc]);
