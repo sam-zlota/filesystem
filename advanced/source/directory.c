@@ -14,13 +14,7 @@
 
 
 
-char *get_filename_from_path(const char *path) {
-  slist *path_list = s_split(path, '/');
-  while (path_list->next) {
-    path_list = path_list->next;
-  }
-  return path_list->data;
-}
+
 
 // returns direntry index of direntry with name at block at page pnum
 int find_in_block(int pnum, const char* name) {

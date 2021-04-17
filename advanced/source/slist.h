@@ -14,4 +14,5 @@ void s_free(slist* xs);
 slist* s_split(const char* text, char delim);
 slist* s_reverse(slist* original);
 
+char *get_filename_from_path(const char *path);
 #endif

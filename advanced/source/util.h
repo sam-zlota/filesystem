@@ -13,6 +13,8 @@ static int max(int x, int y) { return (x > y) ? x : y; }
 
 static int clamp(int x, int v0, int v1) { return max(v0, min(x, v1)); }
 
+
+
 static int bytes_to_pages(int bytes) {
   int quo = bytes / 4096;
   int rem = bytes % 4096;
