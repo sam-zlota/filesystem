@@ -84,7 +84,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                  off_t offset, struct fuse_file_info *fi) {
   printf("entered readdir with path: %s\n", path);
   struct stat st;
-  int rv;
+  int rv = 0;
 
   // will return contents of leaf directory as linkedlist, just their names
   // TODO: hanlde root directory list
@@ -93,10 +93,12 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   // TODO: make sure directory_list behaves correctly
   slist *contents = directory_list(path);
   while (contents) {
-    rv = nufs_getattr(contents->data, &st);
-    if (rv < 0) {
-      return rv;
-    }
+    // broken because contents->data is no longer the absolute path. Also,
+    // why does this even exist?
+    // rv = nufs_getattr(contents->data, &st);
+    // if (rv < 0) {
+    //   return rv;
+    // }
     filler(buf, contents->data, &st, 0);
     contents = contents->next;
   }
@@ -139,8 +141,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     return -ENOSPC;
   }
 
-  // TODO:should this be done in directory put?
-  parent_inode->size += sizeof(direntry);
   // TODO: directory size is it the sum of the size of its contents?
 
   inode *new_inode = get_inode(new_inum);
@@ -167,6 +167,12 @@ int nufs_mkdir(const char *path, mode_t mode) {
   printf("new inum: %ld\n", desired_inum);
 
   // TODO: should we call dir init here? or in mknod
+  ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].inum = desired_inum;
+  strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].name, ".\0");
+
+  ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].inum = parent_inum;
+  strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].name, "..\0");
+
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
 }

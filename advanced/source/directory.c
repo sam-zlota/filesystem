@@ -99,9 +99,9 @@ int tree_lookup(const char* path) {
 }
 
 // returns direntry index of direntry with inum == 0, which means it is free
-int first_free_entry_in_block(int pnum) {
+int first_free_entry_in_block(int offset, int pnum) {
   direntry* page = (direntry*)pages_get_page(pnum);
-  int ii = 0;
+  int ii = offset;
   while (ii < MAX_DIRENTRIES) {
     if (page[ii].inum == 0 && !(pnum == 2 && ii == 0)) {
       return ii;
@@ -120,8 +120,15 @@ int directory_put(inode* dd, const char* name, int inum) {
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
 
+  int offset = 1;
+  // If it ain't the root
+  if (dd->ptrs[0] != 2)
+  {
+    offset = 2;
+  }
+
   // this will run until it finds free block or runs out of memory
-  while (first_free_entry_in_block(curr_pnum) < 0) {
+  while (first_free_entry_in_block(offset, curr_pnum) < 0) {
     if (iptr_index < 0)
       curr_pnum = dd->ptrs[1];
     else
@@ -142,14 +149,15 @@ int directory_put(inode* dd, const char* name, int inum) {
     iptr_index++;
   }
 
-  int direntry_index = first_free_entry_in_block(curr_pnum);
+  int direntry_index = first_free_entry_in_block(offset, curr_pnum);
   direntry* curr_directory = pages_get_page(curr_pnum);
   direntry* new_dirent = &curr_directory[direntry_index];
 
   new_dirent->inum = inum;
-
   strcpy(new_dirent->name, name);
 
+  dd->size += sizeof(direntry);
+  
   assert(strcmp(new_dirent->name, name) == 0);
   // new_dirent->name = buf;
   printf("exiting directory put: success\n");
@@ -245,7 +253,14 @@ slist* directory_list(const char* path) {
 
   // TODO refactor this
   slist* contents = s_cons(".", NULL);
-  contents = cons_page_contents(curr_pnum, 1, contents);
+  if (dd->ptrs[0] == 2)
+  {
+    contents = cons_page_contents(curr_pnum, 1, contents);
+  }
+  else
+  {
+    contents = cons_page_contents(curr_pnum, 2, contents);
+  }
 
   int iptr_index = 0;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
