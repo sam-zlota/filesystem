@@ -90,8 +90,8 @@ int tree_lookup(const char* path) {
   // Loop through the deliminated path, terminating only when you are the parent
   // of the last node in the list
   while (delim_path->next->next != NULL) {
-    curr_dir = directory_lookup(get_inode(curr_dir), delim_path->data);
     delim_path = delim_path->next;
+    curr_dir = directory_lookup(get_inode(curr_dir), delim_path->data);
   }
 
   printf("tree lookup exiting, success\n");
@@ -237,8 +237,10 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
 slist* directory_list(const char* path) {
   printf("entered directory list with path: %s\n", path);
 
+  char* fname = get_filename_from_path(path);
+
   int parent_inum = tree_lookup(path);
-  inode* dd = get_inode(parent_inum);
+  inode* dd = get_inode(directory_lookup(get_inode(parent_inum), fname));
   int curr_pnum = dd->ptrs[0];
 
   // TODO refactor this

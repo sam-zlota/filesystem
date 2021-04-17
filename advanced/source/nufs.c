@@ -25,14 +25,6 @@
 
 int ROOT_PNUM = -1;
 
-char *get_filename_from_path(const char *path) {
-  slist *path_list = s_split(path, '/');
-  while (path_list->next) {
-    path_list = path_list->next;
-  }
-  return path_list->data;
-}
-
 int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 
 // TODO: need to implement: init dir (to init directories other than root),
@@ -127,6 +119,8 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     return parent_inum;
   }
   inode *parent_inode = get_inode(parent_inum);
+  // char* fname = get_filename_from_path(path);
+  // inode* dd = get_inode(directory_lookup(get_inode(parent_inum), target_dd_name));
 
   // might be a directory name
   char *filename = get_filename_from_path(path);

@@ -5,6 +5,8 @@
 
 #include <string.h>
 
+#include "slist.h"
+
 static int streq(const char* aa, const char* bb) { return strcmp(aa, bb) == 0; }
 
 static int min(int x, int y) { return (x < y) ? x : y; }
@@ -29,6 +31,14 @@ static void join_to_path(char* buf, char* item) {
     strcat(buf, "/");
   }
   strcat(buf, item);
+}
+
+static char *get_filename_from_path(const char *path) {
+  slist *path_list = s_split(path, '/');
+  while (path_list->next) {
+    path_list = path_list->next;
+  }
+  return path_list->data;
 }
 
 #endif
