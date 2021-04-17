@@ -132,3 +132,10 @@ int shrink_inode(inode *node, int size) {
 
   return 0;
 }
+
+// // Set the given inum as the current directory
+// void set_curr_dir(int inum)
+// {
+//   int* curr_dir_inum = 88 * sizeof(inode);
+//   *curr_dir_inum = 0;
+// }
