@@ -238,7 +238,10 @@ slist* directory_list(const char* path) {
   printf("entered directory list with path: %s\n", path);
 
   int parent_inum = tree_lookup(path);
-  inode* dd = get_inode(parent_inum);
+  inode* parent_inode = get_inode(parent_inum);
+   char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  inode* dd = get_inode(desired_inum);
   int curr_pnum = dd->ptrs[0];
 
   // TODO refactor this
