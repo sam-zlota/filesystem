@@ -350,7 +350,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   int pages_start = bytes_to_pages(offset); //inclusive
   int pages_end = bytes_to_pages(offset + size); //exclusive
 
-  void *desired_data_block == NULL;
+  void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
     if (ii <=1) {
       assert(desired_inode->ptrs[ii] != 0);
