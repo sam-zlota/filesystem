@@ -12,6 +12,16 @@
 #include "slist.h"
 #include "util.h"
 
+
+
+char *get_filename_from_path(const char *path) {
+  slist *path_list = s_split(path, '/');
+  while (path_list->next) {
+    path_list = path_list->next;
+  }
+  return path_list->data;
+}
+
 // returns direntry index of direntry with name at block at page pnum
 int find_in_block(int pnum, const char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
@@ -239,7 +249,7 @@ slist* directory_list(const char* path) {
 
   int parent_inum = tree_lookup(path);
   inode* parent_inode = get_inode(parent_inum);
-   char *filename = get_filename_from_path(path);
+  char *filename = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, filename);
   inode* dd = get_inode(desired_inum);
   int curr_pnum = dd->ptrs[0];
