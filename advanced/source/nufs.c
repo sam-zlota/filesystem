@@ -421,7 +421,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       assert(iptr_arr[iptr_index] != 0);
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
-    assert(desired_inode != NULL);
+    assert(desired_data_block != NULL);
     memcpy(desired_data_block, buf, min(size, 4096));
     bytes_written += min(size, 4096);
     if(bytes_written % 4096 != 0) {
