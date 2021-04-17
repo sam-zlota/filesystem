@@ -392,7 +392,8 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
 
   //our code will break otherwise
-  assert(offset % 4096 == 0 && size % 4096 == 0);
+  //handle weird edges TODO:
+  // assert(offset % 4096 == 0 && size % 4096 == 0);
 
   int bytes_written = 0;
 
