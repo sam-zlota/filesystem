@@ -408,10 +408,11 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       }
       assert(desired_inode->ptrs[ii] != 0);
       desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
-    }else {
+    }
+    else {
       if(desired_inode->iptr == 0) {
         grow_inode(desired_inode, size);
-      }
+      } 
       int iptr_index = ii - 2;
       assert(desired_inode->iptr != 0);
       int *iptr_arr = (int *)pages_get_page(desired_inode->iptr);
@@ -428,13 +429,12 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
       assert(ii == pages_end - 1);
     }
   }
-  // desired_inode->size += bytes_written;
+  desired_inode->size += bytes_written;
   assert(bytes_written == size);
   rv = bytes_written;
 
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
-
 }
 
 
