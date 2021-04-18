@@ -155,6 +155,26 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   return rv;
 }
 
+
+int nufs_chmod(const char *path, mode_t mode) {
+  printf("entered chmod\n");
+  int rv = 0;
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    return parent_inum;
+  }
+  inode *parent_inode = get_inode(parent_inum);
+  char *filename = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, filename);
+  if (desired_inum < 0) {
+    return desired_inum;
+  }
+  inode *desired_inode = get_inode(desired_inum);
+  desired_inode->mode = mode;
+  printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
+  return rv;
+}
+
 // most of the following callbacks implement
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode) {
@@ -251,24 +271,7 @@ int nufs_rename(const char *from, const char *to) {
   return rv;
 }
 
-int nufs_chmod(const char *path, mode_t mode) {
-  printf("entered chmod\n");
-  int rv = 0;
-  int parent_inum = tree_lookup(path);
-  if (parent_inum < 0) {
-    return parent_inum;
-  }
-  inode *parent_inode = get_inode(parent_inum);
-  char *filename = get_filename_from_path(path);
-  int desired_inum = directory_lookup(parent_inode, filename);
-  if (desired_inum < 0) {
-    return desired_inum;
-  }
-  inode *desired_inode = get_inode(desired_inum);
-  desired_inode->mode = mode;
-  printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
-  return rv;
-}
+
 
 int nufs_truncate(const char *path, off_t size) {
   int rv = 0;
