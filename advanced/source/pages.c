@@ -74,9 +74,3 @@ void free_page(int pnum) {
   void *pbm = get_pages_bitmap();
   bitmap_put(pbm, pnum, 0);
 }
-
-void free_inode(int inum) {
-  // printf("+ free_page(%d)\n", pnum);
-  void *ibm = get_inode_bitmap();
-  bitmap_put(ibm, inum, 0);
-}

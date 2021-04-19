@@ -193,9 +193,13 @@ int directory_delete(inode* dd, const char* name) {
   // this will run until it finds matching direntry or checks all direntries
   while (find_in_block(curr_pnum, name) < 0) {
     if (iptr_index < 0)
+    {
       curr_pnum = dd->ptrs[1];
+    }
     else
+    {
       curr_pnum = *(iptr_page + iptr_index);
+    }
 
     if (curr_pnum == 0) {
       // have reached end of this directory
@@ -209,6 +213,9 @@ int directory_delete(inode* dd, const char* name) {
   direntry* curr_directory = pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
 
+  // Delete the inode 
+  // free_inode(desired_direntry->inum);
+
   memset(desired_direntry, 0, sizeof(direntry));
   // assert that it has been delelted
   assert(desired_direntry->inum == 0);
@@ -219,7 +226,7 @@ int directory_delete(inode* dd, const char* name) {
     // inode_shrink();
   }
 
-  printf("exiting directroy delete: success\n");
+  printf("exiting directory delete: success\n");
   return 0;
 }
 
@@ -275,4 +282,10 @@ slist* directory_list(const char* path) {
 
   printf("successfully exited directory list\n");
   return s_reverse(contents);
+}
+
+// Clears all the contents of a directory
+int clear_directory(inode* dd)
+{
+  
 }

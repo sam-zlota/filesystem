@@ -23,7 +23,7 @@
 // inode* get_root_inode();
 // inode* get_inode(int inum);
 // int alloc_inode();
-// void free_inode();
+// void free_inode(int inum);
 // int grow_inode(inode *node, int size) { return -1; }
 // int shrink_inode(inode* node, int size);
 // int inode_get_pnum(inode* node, int fpn);
@@ -130,6 +130,30 @@ int shrink_inode(inode *node, int size) {
   }
 
   return 0;
+}
+
+void free_inode(int inum)
+{
+  // Free the pages associated with this inode
+  inode* target = get_inode(inum);
+  
+  if (target->ptrs[0] != 0)
+    free_page(target->ptrs[0]);
+  if (target->ptrs[1] != 0)
+    free_page(target->ptrs[1]);
+  if (target->iptr != 0)
+  {
+    for (int ii = 0; ii < PAGE_SIZE/sizeof(int); ii++ )
+    {
+      free_page(*((int*)pages_get_page(target->iptr) + ii));
+    }
+  }
+
+  // Memset the inode page as zero (just in case it's necessary)
+  // memset(target, 0, sizeof(inode));
+
+  // Mark the bitmap as the inode is occupied
+  bitmap_put(get_inode_bitmap(), inum, 0);
 }
 
 // // Set the given inum as the current directory
