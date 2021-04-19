@@ -249,7 +249,7 @@ int nufs_rmdir(const char *path) {
 
   inode *parent_inode = get_inode(parent_inum);
   char *dirname = get_filename_from_path(path);
-  int desired_inum = directory_lookup(parent_inode, filename);
+  int desired_inum = directory_lookup(parent_inode, dirname);
   if (desired_inum < 0) {
     printf("exiting unlink: failure, directory lookup\n");
     return desired_inum;
