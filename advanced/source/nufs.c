@@ -58,10 +58,10 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   int desired_inum = directory_lookup(parent_inode, filename);
 
-  if (desired_inum == 0) {
-    // will return zero if given curr directory
-    desired_inum += parent_inum;
-  }
+  // if (desired_inum == 0) {
+  //   // will return zero if given curr directory
+  //   desired_inum += parent_inum;
+  // }
 
   if (desired_inum < 0) {
     // nufs_mknod(path,0100644,0);
