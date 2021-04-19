@@ -76,6 +76,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   st->st_uid = getuid();
   st->st_nlink = desired_inode->refs;
   st->st_ino = desired_inum;
+  printf("inum in gettattr: %ld\n", desired_inum);
  
 
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
