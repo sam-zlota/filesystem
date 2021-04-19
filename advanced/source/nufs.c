@@ -483,8 +483,8 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
 }
 
 
-int nufs_readlink();
-int nufs_symlink();
+// int nufs_readlink();
+// int nufs_symlink();
 
 
 
@@ -506,8 +506,8 @@ void nufs_init_ops(struct fuse_operations *ops) {
   ops->write = nufs_write;
   ops->utimens = nufs_utimens;
   ops->ioctl = nufs_ioctl;
-  ops->symlink = nufs_symlink;
-  ops->readlink = nufs_readlink;
+  // ops->symlink = nufs_symlink;
+  // ops->readlink = nufs_readlink;
   
 };
 
