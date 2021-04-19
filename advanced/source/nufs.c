@@ -235,6 +235,12 @@ int nufs_unlink(const char *path) {
 int nufs_link(const char *from, const char *to) {
   int rv = -1;
 
+
+
+  void* ibm = get_inode_bitmap();
+
+  printf("BEFORE:\n");
+  bitmap_print(ibm, 10);
   struct stat to_stat;
   struct stat from_stat;
 
@@ -268,6 +274,10 @@ int nufs_link(const char *from, const char *to) {
 
   linking_inode->refs += 1;
   
+  printf("AFTER:\n");
+  bitmap_print(ibm, 10);
+
+
 
   printf("link(%s => %s) -> %d\n", from, to, rv);
   return rv;
