@@ -64,8 +64,9 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   if (desired_inum < 0) {
-    nufs_mknod(path,0100644,0);
-    return nufs_getattr(path,st);
+    // nufs_mknod(path,0100644,0);
+    // return nufs_getattr(path,st);
+    return -ENOENT;
   }
 
   inode *desired_inode = get_inode(desired_inum);
@@ -179,7 +180,7 @@ int nufs_chmod(const char *path, mode_t mode) {
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode) {
   printf("called mkdir\n");
-  int rv = nufs_chmod(path, mode | 040000);
+  int rv = nufs_mknod(path, mode | 040000, 0);
 
   if(rv < 0) {
     return rv;
