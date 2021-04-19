@@ -235,7 +235,40 @@ int nufs_unlink(const char *path) {
 int nufs_link(const char *from, const char *to) {
   int rv = -1;
 
-  // printf("called link")
+  struct stat to_stat;
+  struct stat from_stat;
+
+  rv = nufs_getattr(to, &to_stat);
+  if(rv >= 0) {
+    return -EEXIST;
+  }
+  rv = nufs_getattr(from, &from_stat);
+  if(rv < 0) {
+    return -ENOENT;
+  }
+
+  int parent_inum_from = tree_lookup(from);
+  if(parent_inum_from < 0) {return parent_inum_from;}
+  inode* parent_inode_from = get_inode(parent_inum_from);
+  char *filename_from = get_filename_from_path(from);
+
+  int linking_inum = directory_lookup(parent_inode_from, filename_from);
+  inode* linking_inode = get_inode(linking_inum);
+
+
+  int parent_inum_to = tree_lookup(to);
+  if (parent_inum_to < 0) {return parent_inum_to;}
+  inode *parent_inode_to = get_inode(parent_inum_to);
+
+  char *filename_to = get_filename_from_path(to);
+
+  rv = directory_put(parent_inode_to, filename_to, linking_inum);
+  if (rv < 0) {return -ENOSPC;}
+
+
+  linking_inode->refs += 1;
+  
+
   printf("link(%s => %s) -> %d\n", from, to, rv);
   return rv;
 }
