@@ -495,8 +495,13 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
 }
 
 
-// int nufs_readlink();
-// int nufs_symlink();
+int nufs_readlink(const char* path, char* buf, size_t size) {
+  printf("readlink called\n"); 
+  return -1;
+}
+int nufs_symlink(const char* to, const char* from) {
+  printf("symlink called\n"); 
+  return -1;}
 
 
 
