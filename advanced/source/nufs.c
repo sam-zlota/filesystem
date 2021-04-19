@@ -329,7 +329,6 @@ int nufs_rename(const char *from, const char *to) {
 }
 
 
-
 int nufs_truncate(const char *path, off_t size) {
   int rv = 0;
   printf("truncate(%s, %ld bytes) -> %d\n", path, size, rv);
@@ -483,6 +482,12 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
   return rv;
 }
 
+
+int nufs_readlink();
+int nufs_symlink();
+
+
+
 void nufs_init_ops(struct fuse_operations *ops) {
   memset(ops, 0, sizeof(struct fuse_operations));
   ops->access = nufs_access;
@@ -501,6 +506,9 @@ void nufs_init_ops(struct fuse_operations *ops) {
   ops->write = nufs_write;
   ops->utimens = nufs_utimens;
   ops->ioctl = nufs_ioctl;
+  ops->symlink = nufs_symlink;
+  ops->readlink = nufs_readlink;
+  
 };
 
 struct fuse_operations nufs_ops;
