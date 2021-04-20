@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/sysmacros.h>
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
@@ -21,6 +22,7 @@
 #include "directory.h"
 #include "pages.h"
 #include "slist.h"
+#include "inode.h"
 #include "util.h"
 
 int ROOT_PNUM = -1;
@@ -151,6 +153,20 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
   inode *new_inode = get_inode(new_inum);
 
+
+
+  // if( st.st_mode & S_IFMT == S_IFDIR) {
+
+  // }
+  // if( st.st_mode & S_IFMT == S_IFREG) {
+    
+  // }
+  // if( st.st_mode & S_IFMT == S_IFLNK) {
+    
+  // }
+
+
+
   // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = mode;
   new_inode->refs = 1;
@@ -159,7 +175,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
-
 
 int nufs_chmod(const char *path, mode_t mode) {
   printf("entered chmod\n");
@@ -238,7 +253,6 @@ int nufs_link(const char *from, const char *to) {
   int rv = -1;
 
 
-
   void* ibm = get_inode_bitmap();
 
   printf("BEFORE:\n");
@@ -290,7 +304,7 @@ int nufs_rmdir(const char *path) {
   
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
-    printf("exiting unlink: failure, tree_lookup\n");
+    printf("exiting rmdir: failure, tree_lookup\n");
     return parent_inum;
   }
 
@@ -298,7 +312,7 @@ int nufs_rmdir(const char *path) {
   char *dirname = get_filename_from_path(path);
   int desired_inum = directory_lookup(parent_inode, dirname);
   if (desired_inum < 0) {
-    printf("exiting unlink: failure, directory lookup\n");
+    printf("exiting rmdir: failure, directory lookup\n");
     return desired_inum;
   }
 
@@ -339,7 +353,6 @@ int nufs_rename(const char *from, const char *to) {
   printf("rename(%s => %s) -> %d\n", from, to, rv);
   return rv;
 }
-
 
 int nufs_truncate(const char *path, off_t size) {
   int rv = 0;
@@ -477,7 +490,6 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   return rv;
 }
 
-
 // Update the timestamps on a file or directory.
 int nufs_utimens(const char *path, const struct timespec ts[2]) {
   int rv = -1;
@@ -494,15 +506,46 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
   return rv;
 }
 
-
 int nufs_readlink(const char* path, char* buf, size_t size) {
   printf("readlink called\n"); 
-  return -1;
-}
-int nufs_symlink(const char* to, const char* from) {
-  printf("symlink called\n"); 
-  return -1;}
 
+  inode* parent_inode = get_inode(tree_lookup(path));
+
+  char* filename = get_filename_from_path(path);
+  inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
+  
+  symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
+  memcpy(buf, info->target_path, strlen(info->target_path));
+
+
+
+
+  return 0;
+}
+
+
+int nufs_symlink(const char* to, const char* from) {
+
+  struct stat from_stat;
+  nufs_getattr(from, &from_stat);
+
+  
+  nufs_mknod(to, 012644, (&from_stat)->st_rdev);
+  inode* parent_inode = get_inode(tree_lookup(to));
+
+  char* filename = get_filename_from_path(to);
+  inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
+  
+  symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
+  memcpy(info->target_path, from, strlen(from));
+
+
+  printf("symlink called\n"); 
+
+
+
+  return -1;
+  }
 
 
 void nufs_init_ops(struct fuse_operations *ops) {
