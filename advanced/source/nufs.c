@@ -537,7 +537,8 @@ int nufs_symlink(const char* to, const char* from) {
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
   symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
-  memcpy(info->target_path, from, strlen(from));
+  info->target_path = 
+  strcpy(info->target_path, from);
 
 
   printf("symlink called\n"); 
