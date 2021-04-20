@@ -531,7 +531,7 @@ int nufs_symlink(const char* to, const char* from) {
   struct stat to_stat;
   nufs_getattr(to, &to_stat);
 
-  nufs_mknod(from, 012644, (&to_stat)->st_rdev);
+  nufs_mknod(from, 120644, (&to_stat)->st_rdev);
   inode* parent_inode = get_inode(tree_lookup(from));
 
   char* filename = get_filename_from_path(from);
