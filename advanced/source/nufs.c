@@ -540,7 +540,7 @@ int nufs_symlink(const char* to, const char* from) {
   symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
   printf("trying to copy\n"); 
 
-  info->target_path = to;
+  info->target_path = strcat(to, "\0");
 
 
   printf("symlink called\n"); 
