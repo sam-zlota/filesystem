@@ -7,6 +7,9 @@
 
 #include "slist.h"
 
+static int MODE_FILE = 0100644;
+static int MODE_DIR = 040000;
+
 static int streq(const char* aa, const char* bb) { return strcmp(aa, bb) == 0; }
 
 static int min(int x, int y) { return (x < y) ? x : y; }

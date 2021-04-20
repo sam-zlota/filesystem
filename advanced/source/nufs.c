@@ -64,7 +64,7 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   if (desired_inum < 0) {
-    nufs_mknod(path,0100644,0);
+    nufs_mknod(path,MODE_FILE,0);
     return nufs_getattr(path,st);
   }
 
@@ -179,7 +179,7 @@ int nufs_chmod(const char *path, mode_t mode) {
 // another system call; see section 2 of the manual
 int nufs_mkdir(const char *path, mode_t mode) {
   printf("called mkdir\n");
-  int rv = nufs_chmod(path, mode | 040000);
+  int rv = nufs_chmod(path, mode | MODE_DIR);
 
   if(rv < 0) {
     return rv;
@@ -217,11 +217,6 @@ int nufs_unlink(const char *path) {
     printf("exiting unlink: failure, directory lookup\n");
     return desired_inum;
   }
-
-  inode *desired_inode = get_inode(desired_inum);
-
-  desired_inode->refs--;
-  printf("calling delete with refs: %ld\n", desired_inode->refs);
 
   rv = directory_delete(parent_inode, filename);
 

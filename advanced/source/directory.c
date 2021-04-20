@@ -180,6 +180,29 @@ int is_block_empty(int pnum) {
   return 1;
 }
 
+// Deletes a single file
+int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
+{
+  // Delete the inode if refs = 0
+  if (desired_inode->refs == 0)
+  {
+    free_inode(desired_direntry->inum);
+  }
+
+  memset(desired_direntry, 0, sizeof(direntry));
+  // assert that it has been delelted
+  assert(desired_direntry->inum == 0);
+
+  // check to see if any more
+  if (is_block_empty(curr_pnum)) {
+    printf("calling inode shrink from directory delete\n");
+    // inode_shrink();
+  }
+
+  printf("exiting directory delete: success\n");
+  return 0;
+}
+
 // this should only be called when there are no more links/refs, deletes
 // direntry in directory with name
 int directory_delete(inode* dd, const char* name) {
@@ -212,22 +235,14 @@ int directory_delete(inode* dd, const char* name) {
   int direntry_index = find_in_block(curr_pnum, name);
   direntry* curr_directory = pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
+  inode* desired_inode = get_inode(desired_direntry->inum);
 
-  // Delete the inode 
-  // free_inode(desired_direntry->inum);
+  desired_inode->refs--;
 
-  memset(desired_direntry, 0, sizeof(direntry));
-  // assert that it has been delelted
-  assert(desired_direntry->inum == 0);
-
-  // check to see if any more
-  if (is_block_empty(curr_pnum)) {
-    printf("calling inode shrink from directory delete\n");
-    // inode_shrink();
-  }
-
-  printf("exiting directory delete: success\n");
-  return 0;
+  if (desired_inode->mode = MODE_FILE)
+    return delete_file(desired_direntry, desired_inode, curr_pnum);
+  else
+    return delete_file(desired_direntry, desired_inode, curr_pnum);
 }
 
 // cons each of the names of the direntries at page with the rest
