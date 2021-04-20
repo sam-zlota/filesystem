@@ -145,10 +145,15 @@ void free_inode(int inum)
     free_page(target->ptrs[1]);
   if (target->iptr != 0)
   {
-    for (int ii = 0; ii < PAGE_SIZE/sizeof(int); ii++ )
+    int* iptr_arr = (int*)pages_get_page(target->iptr);
+    int curr_pnum = -1;
+    for (int ii = 0; ii < 256; ii++ )
     {
-      free_page(*((int*)pages_get_page(target->iptr) + ii));
+      curr_pnum = * (iptr_arr + ii);
+      if(curr_pnum != 0)
+        free_page(curr_pnum);
     }
+    free_page(target->iptr);
   }
 
   // Memset the inode page as zero (just in case it's necessary)

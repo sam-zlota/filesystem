@@ -368,8 +368,10 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_start = offset/4096; //inclusive
-  int pages_end = bytes_to_pages(offset + size); //exclusive
+  5 = 1
+  5 +3 = 1
+  int pages_start = offset/4096; //inclusive floor
+  int pages_end = bytes_to_pages(offset + size); //exclusive ceiling
 
   printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
 
@@ -625,7 +627,7 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".\0");  // TODO:check null termination
+  strcpy(root_dirent->name, ".\0");  
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 }
