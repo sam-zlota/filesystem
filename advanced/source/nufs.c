@@ -246,8 +246,6 @@ int nufs_unlink(const char *path) {
 
 int nufs_link(const char *from, const char *to) {
   int rv = -1;
-
-
   void* ibm = get_inode_bitmap();
 
   printf("BEFORE:\n");
@@ -373,7 +371,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
 
-
   void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
     if (ii <=1) {
@@ -414,6 +411,15 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   }
   inode *desired_inode = get_inode(desired_inum);
 
+  if (offset > desired_inode->size)
+  {
+    grow_inode(desired_inode, offset - desired_inode->size);
+  }
+
+  if (offset < desired_inode->size)
+  {
+    shrink_inode(desired_inode, offset);
+  }
 
   //our code will break otherwise
   //handle weird edges TODO:
@@ -434,9 +440,14 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
         grow_inode(desired_inode, size);
       }
       assert(desired_inode->ptrs[ii] != 0);
+
       desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
+      if (ii == pages_start)
+      {
+        desired_data_block += (offset % PAGE_SIZE);
+      }
     }
-    else {
+    else {  
       if(desired_inode->iptr == 0) {
         grow_inode(desired_inode, size);
       } 
