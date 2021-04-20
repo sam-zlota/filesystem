@@ -293,12 +293,14 @@ int directory_delete(inode* dd, const char* name) {
   int mode = desired_inode->mode & S_IFMT;
   int filemode = S_IFREG;
 
-  desired_inode->refs--;
+  assert( desired_inode->refs >= 0);
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
   if ((desired_inode->mode & S_IFMT) == S_IFREG)
   {
+    desired_inode->refs--;
+
     return delete_file(desired_direntry, desired_inode, curr_pnum);
   }
   else if ((desired_inode->mode & S_IFMT) == S_IFDIR)

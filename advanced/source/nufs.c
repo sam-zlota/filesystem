@@ -248,8 +248,8 @@ int nufs_link(const char *from, const char *to) {
   int rv = -1;
   void* ibm = get_inode_bitmap();
 
-  printf("BEFORE:\n");
-  bitmap_print(ibm, 10);
+  // printf("BEFORE:\n");
+  // bitmap_print(ibm, 10);
   struct stat to_stat;
   struct stat from_stat;
 
@@ -283,8 +283,8 @@ int nufs_link(const char *from, const char *to) {
 
   linking_inode->refs += 1;
   
-  printf("AFTER:\n");
-  bitmap_print(ibm, 10);
+  // printf("AFTER:\n");
+  // bitmap_print(ibm, 10);
 
 
 
@@ -366,8 +366,8 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_start = bytes_to_pages(offset); //inclusive
-  int pages_end = bytes_to_pages(offset + size); //exclusive
+  int pages_start = offset/4096; //inclusive floor
+  int pages_end = bytes_to_pages(offset + size); //exclusive ceiling
 
   printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
 
@@ -427,10 +427,16 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   int bytes_written = 0;
 
-  int pages_start = bytes_to_pages(offset); //starting index, inclusive
-  
+
+  int pages_start = offset/4096;   
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
 
+
+
+  if(pages_start == pages_end) {
+    pages_start--;
+  }
+  assert(pages_start >= 0);
   printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
@@ -513,9 +519,16 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 int nufs_symlink(const char* to, const char* from) {
   printf("called symlink to: %s, from: %s\n", to, from);
   struct stat to_stat;
-  nufs_getattr(to, &to_stat);
+  int rv = 0;
+  rv = nufs_getattr(to, &to_stat);
+  if(rv < 0) {
+    return rv;
+  }
 
-  nufs_mknod(from, 0120644, (&to_stat)->st_rdev);
+  rv = nufs_mknod(from, 0120644, (&to_stat)->st_rdev);
+  if(rv < 0) {
+    return rv;
+  }
   inode* parent_inode = get_inode(tree_lookup(from));
 
   char* filename = get_filename_from_path(from);
@@ -526,7 +539,7 @@ int nufs_symlink(const char* to, const char* from) {
 
   *size = strlen(to);
   printf("trying to copy with size %ld\n", *size); 
-  void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
+  // void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
   nufs_write(from,to, *size, sizeof(size_t), NULL);
 
@@ -619,7 +632,7 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".\0");  // TODO:check null termination
+  strcpy(root_dirent->name, ".\0");  
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 }
