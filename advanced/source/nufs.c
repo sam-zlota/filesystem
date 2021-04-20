@@ -376,7 +376,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   if(pages_start == pages_end) {
     pages_start--;
   }
-  assert(pages_start > 0);
+  assert(pages_start >= 0);
 
   void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
@@ -435,7 +435,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   if(pages_start == pages_end) {
     pages_start--;
   }
-  assert(pages_start > 0);
+  assert(pages_start >= 0);
   printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
