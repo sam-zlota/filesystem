@@ -389,7 +389,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
     bytes_read += min(size, 4096);
   }
   // desired_inode->size += bytes_written;
-  assert(bytes_read == size);
+  // assert(bytes_read == size);
   rv = bytes_read;
 
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
