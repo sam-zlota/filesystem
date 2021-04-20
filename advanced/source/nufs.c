@@ -515,6 +515,8 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
   symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
+
+
   memcpy(buf, info->target_path, strlen(info->target_path));
 
 
@@ -525,7 +527,7 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 
 
 int nufs_symlink(const char* to, const char* from) {
-
+  printf("called symlink\n");
   struct stat from_stat;
   nufs_getattr(from, &from_stat);
 
@@ -537,7 +539,8 @@ int nufs_symlink(const char* to, const char* from) {
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
   symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
-  info->target_path = 
+  printf("trying to copy\n"); 
+
   strcpy(info->target_path, from);
 
 
