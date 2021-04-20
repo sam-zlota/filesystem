@@ -548,7 +548,7 @@ int nufs_symlink(const char* to, const char* from) {
 
 
 
-  return -1;
+  return 0;
   }
 
 
