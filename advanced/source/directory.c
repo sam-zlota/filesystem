@@ -280,7 +280,7 @@ int directory_delete(inode* dd, const char* name) {
   }
 
   int direntry_index = find_in_block(curr_pnum, name);
-  direntry* curr_directory = pages_get_page(curr_pnum);
+  direntry* curr_directory = (direntry*) pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
   inode* desired_inode = get_inode(desired_direntry->inum);
 

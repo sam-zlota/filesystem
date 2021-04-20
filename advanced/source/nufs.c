@@ -514,7 +514,6 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
   size_t path_size = *((size_t*)pages_get_page(desired_inode->ptrs[0]));
 
   nufs_read(path, buf,path_size, sizeof(size_t), NULL);
-  
 
 
   return 0;
