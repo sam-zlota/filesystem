@@ -527,7 +527,7 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 
 
 int nufs_symlink(const char* to, const char* from) {
-  printf("called symlink\n");
+  printf("called symlink to: %s, from: %s\n", to, from);
   struct stat from_stat;
   nufs_getattr(from, &from_stat);
 
