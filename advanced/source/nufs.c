@@ -502,9 +502,15 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 int nufs_symlink(const char* to, const char* from) {
   printf("called symlink to: %s, from: %s\n", to, from);
   struct stat to_stat;
-  nufs_getattr(to, &to_stat);
+  rv = nufs_getattr(to, &to_stat);
+  if(rv < 0) {
+    return rv;
+  }
 
-  nufs_mknod(from, 0120644, (&to_stat)->st_rdev);
+  rv = nufs_mknod(from, 0120644, (&to_stat)->st_rdev);
+  if(rv < 0) {
+    return rv;
+  }
   inode* parent_inode = get_inode(tree_lookup(from));
 
   char* filename = get_filename_from_path(from);
