@@ -210,29 +210,35 @@ int delete_folder(direntry* desired_direntry, inode* desired_inode, int curr_pnu
   int pnum = desired_inode->ptrs[0];
   int iptr_index = 0;
   
-  // If pnum == 0, then we've reached the end of our useful direntries. If iptr_index > PAGE_SIZE/sizeof(int), our iptr_index has exceeded the bounds of one page
-  while (iptr_index <= PAGE_SIZE/sizeof(int) && pnum != 0)
-  {
-    for (int index = 0; index < PAGE_SIZE/sizeof(direntry*); index++)
-    {
-      direntry* entry = (direntry*)pages_get_page(pnum) + index;
-      directory_delete(desired_inode, entry->name);
-    }
-
-    if (pnum == desired_inode->ptrs[0] && desired_inode->ptrs[1] != 0)
-    {
-      pnum = desired_inode->ptrs[1];
-    }
-    else if (pnum == desired_inode->ptrs[1] && desired_inode->iptr != 0)
-    {
-      pnum = *((int*)pages_get_page(desired_inode->iptr) + iptr_index);
-      iptr_index++;
-    }
-  }
-  
   // Now wipe this direntry off the disk
   if (desired_inode->refs == 0)
   {
+    // If pnum == 0, then we've reached the end of our useful direntries. If iptr_index > PAGE_SIZE/sizeof(int), our iptr_index has exceeded the bounds of one page
+    while (iptr_index <= PAGE_SIZE/sizeof(int) && pnum != 0)
+    {
+      for (int index = 0; index < PAGE_SIZE/sizeof(direntry*); index++)
+      {
+        direntry* entry = (direntry*)pages_get_page(pnum) + index;
+        if (strcmp(entry->name, ".") == 0 || strcmp(entry->name, "..") == 0)
+        {
+          continue;
+        }
+        directory_delete(desired_inode, entry->name);
+      }
+
+      if (pnum == desired_inode->ptrs[0] && desired_inode->ptrs[1] != 0)
+      {
+        pnum = desired_inode->ptrs[1];
+      }
+      else if (pnum == desired_inode->ptrs[1] && desired_inode->iptr != 0)
+      {
+        pnum = *((int*)pages_get_page(desired_inode->iptr) + iptr_index);
+        iptr_index++;
+        continue;
+      }
+      break;
+    }
+  
     free_inode(desired_direntry->inum);
   }
 
@@ -280,16 +286,26 @@ int directory_delete(inode* dd, const char* name) {
   }
 
   int direntry_index = find_in_block(curr_pnum, name);
-  direntry* curr_directory = pages_get_page(curr_pnum);
+  direntry* curr_directory = (direntry*)pages_get_page(curr_pnum);
   direntry* desired_direntry = &curr_directory[direntry_index];
   inode* desired_inode = get_inode(desired_direntry->inum);
 
+  int mode = desired_inode->mode & S_IFMT;
+  int filemode = S_IFREG;
+
   desired_inode->refs--;
 
-  if (desired_inode->mode & S_IFMT == S_IFREG)
+  printf("target inode refs are now %d\n", desired_inode->refs);
+
+  if ((desired_inode->mode & S_IFMT) == S_IFREG)
+  {
     return delete_file(desired_direntry, desired_inode, curr_pnum);
-  else if (desired_inode->mode & S_IFMT == S_IFDIR)
+  }
+  else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
+  {
     return delete_folder(desired_direntry, desired_inode, curr_pnum);
+  }
+  printf("UNREACHABLE\n\n");
 }
 
 // cons each of the names of the direntries at page with the rest
@@ -344,10 +360,4 @@ slist* directory_list(const char* path) {
 
   printf("successfully exited directory list\n");
   return s_reverse(contents);
-}
-
-// Clears all the contents of a directory
-int clear_directory(inode* dd)
-{
-  
 }
