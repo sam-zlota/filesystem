@@ -29,6 +29,7 @@
 // int inode_get_pnum(inode* node, int fpn);
 
 int alloc_inode() {
+  
   void *ibm = get_inode_bitmap();
 
   for (int ii = 1; ii < 256; ++ii) {
@@ -39,6 +40,7 @@ int alloc_inode() {
       if (new_pnum < 0) {
         return new_pnum;
       }
+      printf("ALLOC INODE: %ld\n", ii);
       new_inode->ptrs[0] = new_pnum;
       return ii;
     }

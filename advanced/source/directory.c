@@ -20,7 +20,7 @@ int find_in_block(int pnum, const char* name) {
   printf("entered  find\n");
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
-    printf("comparing: %s with %s\n", curr_dirent->name, name);
+    printf("comparing: %s with %s, inum: %ld\n", curr_dirent->name, name, curr_dirent->inum);
     if (strcmp(curr_dirent->name, name) == 0) {
       printf("FOUND in block\n");
       return ii;
