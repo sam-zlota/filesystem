@@ -528,20 +528,19 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 
 int nufs_symlink(const char* to, const char* from) {
   printf("called symlink to: %s, from: %s\n", to, from);
-  struct stat from_stat;
-  nufs_getattr(from, &from_stat);
+  struct stat to_stat;
+  nufs_getattr(to, &to_stat);
 
-  
-  nufs_mknod(to, 012644, (&from_stat)->st_rdev);
-  inode* parent_inode = get_inode(tree_lookup(to));
+  nufs_mknod(from, 012644, (&to_stat)->st_rdev);
+  inode* parent_inode = get_inode(tree_lookup(from));
 
-  char* filename = get_filename_from_path(to);
+  char* filename = get_filename_from_path(from);
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
   symlink_info* info = (symlink_info*)pages_get_page(desired_inode->ptrs[0]);
   printf("trying to copy\n"); 
 
-  info->target_path = from;
+  info->target_path = to;
 
 
   printf("symlink called\n"); 
