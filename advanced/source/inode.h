@@ -6,11 +6,6 @@
 #include "pages.h"
 
 
-
-typedef struct symlink_info {
-  char target_path[4000];
-}symlink_info;
-
 typedef struct inode {
   int refs;     // reference count
   int mode;     // permission & type
