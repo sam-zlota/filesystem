@@ -540,7 +540,7 @@ int nufs_symlink(const char* to, const char* from) {
   size_t* size = (size_t*)pages_get_page(desired_inode->ptrs[0]);
   printf("trying to copy\n"); 
 
-  *size = strlen(from);
+  *size = strlen(to);
 
   void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
