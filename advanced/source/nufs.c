@@ -165,8 +165,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
     
   // }
 
-
-
   // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = mode;
   new_inode->refs = 1;
