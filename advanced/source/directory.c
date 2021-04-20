@@ -187,7 +187,7 @@ int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
   // Delete the inode if refs = 0
   if (desired_inode->refs == 0)
   {
-    free_inode(desired_direntry->inum);
+    // free_inode(desired_direntry->inum);
   }
 
   memset(desired_direntry, 0, sizeof(direntry));
@@ -239,7 +239,7 @@ int delete_folder(direntry* desired_direntry, inode* desired_inode, int curr_pnu
       break;
     }
   
-    free_inode(desired_direntry->inum);
+    // free_inode(desired_direntry->inum);
   }
 
   memset(desired_direntry, 0, sizeof(direntry));
