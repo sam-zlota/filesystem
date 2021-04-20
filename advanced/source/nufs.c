@@ -368,7 +368,7 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_start = bytes_to_pages(offset); //inclusive
+  int pages_start = offset/4096; //inclusive
   int pages_end = bytes_to_pages(offset + size); //exclusive
 
   printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
@@ -426,8 +426,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   int bytes_written = 0;
 
 
-  int pages_start = bytes_to_pages(offset) ; //starting index, inclusive
-  
+  int pages_start = offset/4096;   
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
 
 

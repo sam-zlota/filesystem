@@ -8,7 +8,7 @@
 #include "slist.h"
 
 static int MODE_FILE = 0100644;
-static int MODE_DIR = 040000;
+static int MODE_DIR = 0040000;
 
 static int streq(const char* aa, const char* bb) { return strcmp(aa, bb) == 0; }
 
