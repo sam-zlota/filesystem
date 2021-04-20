@@ -368,8 +368,6 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  5 = 1
-  5 +3 = 1
   int pages_start = offset/4096; //inclusive floor
   int pages_end = bytes_to_pages(offset + size); //exclusive ceiling
 
