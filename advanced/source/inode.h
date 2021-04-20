@@ -8,7 +8,7 @@
 
 
 typedef struct symlink_info {
-  char* target_path;
+  const char* target_path;
 }symlink_info;
 
 typedef struct inode {
