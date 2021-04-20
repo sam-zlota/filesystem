@@ -538,10 +538,10 @@ int nufs_symlink(const char* to, const char* from) {
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
   size_t* size = (size_t*)pages_get_page(desired_inode->ptrs[0]);
-  printf("trying to copy\n"); 
+  
 
   *size = strlen(to);
-
+  printf("trying to copy with size %ld\n", *size); 
   void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
   nufs_write(from,to, *size, sizeof(size_t), NULL);
