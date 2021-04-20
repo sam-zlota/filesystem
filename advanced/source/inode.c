@@ -95,8 +95,68 @@ int grow_inode(inode *node, int size) {
   return 0;
 }
 
-// Shrinks the inode by the given size
+// Shrinks the inode to the given size
 int shrink_inode(inode *node, int size) {
+  node->size -= size;
+  // This is the number of pages we need to leave allocated. It gets decremented as we go through page_targets
+  int dealloc_target = size / PAGE_SIZE;
+  int dealloc_space = 0;
+  int page_target = node->ptrs[0];
+  int *ppage_target = &node->ptrs[0];
+  int iptr_index = -1;
+
+  while (1)
+  {
+    // The first page that we need to dealloc is the weird case where we might not have to deallocate the whole page
+    if (dealloc_target == 0)
+    {
+      void* target_address = (char*)pages_get_page(page_target) + (size % PAGE_SIZE);
+      memset(target_address, 0, PAGE_SIZE - (size % PAGE_SIZE));
+
+      // Reason why we can't have size == 0 is because then we'd try to set iptrs[0] = 0, and that's no good
+      if ((size % PAGE_SIZE) == 0 && size != 0)
+      {
+        free_page(page_target);
+        memset(ppage_target, 0, sizeof(int));
+      }
+    }
+    
+    // Subsequently, we deallocate the whole page
+    if (dealloc_target < 0)
+    {
+      free_page(page_target);
+      memset(ppage_target, 0, sizeof(int));
+    }
+
+    dealloc_target--;
+
+    if (page_target == node->ptrs[0] && node->ptrs[1] != 0)
+    {
+      page_target = node->ptrs[1];
+      ppage_target = &node->ptrs[1];
+    }
+    else if (page_target == node->ptrs[1] && node->iptr != 0)
+    {
+      iptr_index = 0;
+      ppage_target = pages_get_page(node->iptr);
+      page_target = *(int*)ppage_target;
+    }
+    else if (iptr_index >= 0 && iptr_index < (PAGE_SIZE / sizeof(int)))
+    {
+      iptr_index++;
+      ppage_target = ((int*)pages_get_page(node->iptr) + iptr_index);
+      page_target = *ppage_target;
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  return 0;
+}
+
+void coallesce_direntries(inode *node, int size) {
   node->size -= size;
   int dealloc_space = 0;
 
@@ -130,8 +190,6 @@ int shrink_inode(inode *node, int size) {
 
     ppointer = next_ppointer;
   }
-
-  return 0;
 }
 
 void free_inode(int inum)
