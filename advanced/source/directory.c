@@ -114,7 +114,7 @@ int first_free_entry_in_block(int offset, int pnum) {
 
 // Puts an inum with the given name in the given parent directory
 int directory_put(inode* dd, const char* name, int inum) {
-  printf("entered directory put with name: %s\n", name);
+  ("entered directory put with name: %s\n", name);
 
   int rv = 0;
   int curr_pnum = dd->ptrs[0];
@@ -158,6 +158,7 @@ int directory_put(inode* dd, const char* name, int inum) {
   strcpy(new_dirent->name, name);
 
   dd->size += sizeof(direntry);
+  
   
   assert(strcmp(new_dirent->name, name) == 0);
   // new_dirent->name = buf;
@@ -293,14 +294,15 @@ int directory_delete(inode* dd, const char* name) {
   int mode = desired_inode->mode & S_IFMT;
   int filemode = S_IFREG;
 
+ 
+  desired_inode->refs--;
+
   assert( desired_inode->refs >= 0);
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
   if ((desired_inode->mode & S_IFMT) == S_IFREG)
   {
-    desired_inode->refs--;
-
     return delete_file(desired_direntry, desired_inode, curr_pnum);
   }
   else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
