@@ -514,8 +514,12 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
   char* filename = get_filename_from_path(path);
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
-  int size = *(*int)pages_get_page(desired_inode->ptrs[0]);
-  memcpy(buf, &size++, size);
+
+ 
+  size_t size = *(*size_t)pages_get_page(desired_inode->ptrs[0]);
+
+  nufs_read(path, buf,size, sizeof(size_t));
+  
 
 
   return 0;
@@ -533,12 +537,14 @@ int nufs_symlink(const char* to, const char* from) {
   char* filename = get_filename_from_path(from);
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
   
-  int* size = (int*)pages_get_page(desired_inode->ptrs[0]);
+  size_t* size = (size_t*)pages_get_page(desired_inode->ptrs[0]);
   printf("trying to copy\n"); 
 
   *size = strlen(from);
+
+  void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
-  nufs_write(to, pages_get_page(desired_inode->ptrs[0]),to,*size, sizeof(int));
+  nufs_write(from,to, *size, sizeof(size_t), NULL);
 
   // strcpy(info->target_path,to);
 
