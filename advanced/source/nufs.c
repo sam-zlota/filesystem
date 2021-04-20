@@ -538,7 +538,7 @@ int nufs_symlink(const char* to, const char* from) {
 
   *size = strlen(from);
   
-  nufs_write(pages_get_page(desired_inode->ptrs[0]),to,*size, sizeof(int));
+  nufs_write(to, pages_get_page(desired_inode->ptrs[0]),to,*size, sizeof(int));
 
   // strcpy(info->target_path,to);
 
