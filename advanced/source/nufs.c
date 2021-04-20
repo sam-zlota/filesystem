@@ -457,7 +457,7 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
     }
   }
   desired_inode->size += bytes_written;
-  assert(bytes_written == size);
+  // assert(bytes_written == size);
   rv = bytes_written;
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
@@ -515,7 +515,7 @@ int nufs_symlink(const char* to, const char* from) {
 
   *size = strlen(to);
   printf("trying to copy with size %ld\n", *size); 
-  void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
+  // void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
   nufs_write(from,to, *size, sizeof(size_t), NULL);
 
