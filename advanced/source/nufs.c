@@ -368,11 +368,15 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_start = max(0, bytes_to_pages(offset) -1); //inclusive
+  int pages_start = bytes_to_pages(offset); //inclusive
   int pages_end = bytes_to_pages(offset + size); //exclusive
 
   printf("reading start: %ld, end: %ld\n",pages_start, pages_end );
 
+  if(pages_start == pages_end) {
+    pages_start--;
+  }
+  assert(pages_start > 0);
 
   void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
@@ -421,10 +425,17 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   int bytes_written = 0;
 
-  int pages_start = max(0, bytes_to_pages(offset) -1) ; //starting index, inclusive
+
+  int pages_start = bytes_to_pages(offset) ; //starting index, inclusive
   
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
 
+
+
+  if(pages_start == pages_end) {
+    pages_start--;
+  }
+  assert(pages_start > 0);
   printf("writing start: %ld, end: %ld\n",pages_start, pages_end );
 
   void *desired_data_block = NULL;
