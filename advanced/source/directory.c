@@ -263,6 +263,7 @@ int directory_delete(inode* dd, const char* name) {
   // assert(dd->refs == 0);
   printf("called directory delete\n");
 
+  printf("trying to delete: %s\n", name);
 
   if(strcmp(name, "..") == 0 || strcmp(name, ".") == 0 ) {
     printf("called delete on . or ..");
