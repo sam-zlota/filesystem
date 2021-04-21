@@ -11,22 +11,6 @@
 #include "pages.h"
 #include "util.h"
 
-// typedef struct inode {
-//   int refs;     // reference count
-//   int mode;     // permission & type
-//   int size;     // bytes
-//   int ptrs[2];  // direct pointers
-//   int iptr;     // single indirect pointer
-// } inode;
-
-// void print_inode(inode* node);
-// inode* get_root_inode();
-// inode* get_inode(int inum);
-// int alloc_inode();
-// void free_inode(int inum);
-// int grow_inode(inode *node, int size) { return -1; }
-// int shrink_inode(inode* node, int size);
-// int inode_get_pnum(inode* node, int fpn);
 
 int alloc_inode() {
   
@@ -40,7 +24,6 @@ int alloc_inode() {
       if (new_pnum < 0) {
         return new_pnum;
       }
-      printf("ALLOC INODE: %ld\n", ii);
       new_inode->ptrs[0] = new_pnum;
       return ii;
     }
@@ -65,7 +48,6 @@ int grow_inode(inode *node, int size) {
 
   assert(pages_needed > 0);
 
-  printf("growing inode by %ld pages\n", pages_needed);
 
   int *iptr_arr = (int *)pages_get_page(node->iptr);
   int iptr_index = 0;
@@ -82,7 +64,6 @@ int grow_inode(inode *node, int size) {
     int *curr_pnum_ptr = iptr_arr + iptr_index;
     if (*curr_pnum_ptr == 0) {
       *curr_pnum_ptr = alloc_page();
-      printf("iprtr index: %ld, new page: %ld\n", iptr_index, *curr_pnum_ptr);
       pages_needed--;
     }
 
@@ -221,9 +202,3 @@ void free_inode(int inum)
   bitmap_put(get_inode_bitmap(), inum, 0);
 }
 
-// // Set the given inum as the current directory
-// void set_curr_dir(int inum)
-// {
-//   int* curr_dir_inum = 88 * sizeof(inode);
-//   *curr_dir_inum = 0;
-// }

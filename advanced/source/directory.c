@@ -17,12 +17,9 @@
 int find_in_block(int pnum, const char* name) {
   direntry* block = (direntry*)pages_get_page(pnum);
   int ii = 0;
-  printf("entered  find\n");
   while (ii < MAX_DIRENTRIES) {
     direntry* curr_dirent = &block[ii];
-    printf("comparing: %s with %s, inum: %ld\n", curr_dirent->name, name, curr_dirent->inum);
     if (strcmp(curr_dirent->name, name) == 0) {
-      printf("FOUND in block\n");
       return ii;
     }
     ii++;
@@ -32,7 +29,6 @@ int find_in_block(int pnum, const char* name) {
 
 // returns the inum of the direntry in this directory with name
 int directory_lookup(inode* dd, const char* name) {
-  printf("entered directory lookup with name: %s\n", name);
   int rv = -1;
   // You're asking me to lookup the root in the root, so just return the root
   int curr_pnum = dd->ptrs[0];
@@ -42,12 +38,10 @@ int directory_lookup(inode* dd, const char* name) {
   // this handles the case "" is given
   if (strcmp("\0", name) == 0) {
     // it means we want
-    printf("exited directory lookup: success, found empty\n");
 
     return 0;
   }
 
-  printf("calling find with pnum: %ld and name: %s\n", curr_pnum, name);
   // this will run until it finds matching direntry or checks all direntries
   while (find_in_block(curr_pnum, name) < 0) {
     if (iptr_index < 0)
@@ -57,8 +51,6 @@ int directory_lookup(inode* dd, const char* name) {
 
     if (curr_pnum == 0) {
       // have reached end
-      printf("exited directory lookup: failure -ENONET\n");
-
       return -ENOENT;
     }
     iptr_index++;
@@ -78,7 +70,6 @@ int get_curr_dir(const char* path)
 
 // Returns the inum of parent directory of the filename at the end of the path
 int tree_lookup(const char* path) {
-  printf("entered tree lookup\n");
   slist* delim_path = s_split(strdup(path), '/');
   int curr_dir = 0;
 
@@ -114,7 +105,6 @@ int first_free_entry_in_block(int offset, int pnum) {
 
 // Puts an inum with the given name in the given parent directory
 int directory_put(inode* dd, const char* name, int inum) {
-  ("entered directory put with name: %s\n", name);
 
   int rv = 0;
   int curr_pnum = dd->ptrs[0];
@@ -198,7 +188,6 @@ int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
   // TODO
   // check to see if any more
   if (is_block_empty(curr_pnum)) {
-    printf("calling inode shrink from directory delete\n");
     // inode_shrink();
   }
 
@@ -206,69 +195,12 @@ int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
   return 0;
 }
 
-int delete_folder(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
-{
-  int pnum = desired_inode->ptrs[0];
-  int iptr_index = 0;
-  
-  // Now wipe this direntry off the disk
-  if (desired_inode->refs == 0)
-  {
-    // If pnum == 0, then we've reached the end of our useful direntries. If iptr_index > PAGE_SIZE/sizeof(int), our iptr_index has exceeded the bounds of one page
-    while (iptr_index <= PAGE_SIZE/sizeof(int) && pnum != 0)
-    {
-      for (int index = 0; index < PAGE_SIZE/sizeof(direntry*); index++)
-      {
-        direntry* entry = (direntry*)pages_get_page(pnum) + index;
-        if (strcmp(entry->name, ".") == 0 || strcmp(entry->name, "..") == 0)
-        {
-          continue;
-        }
-        directory_delete(desired_inode, entry->name);
-      }
-
-      if (pnum == desired_inode->ptrs[0] && desired_inode->ptrs[1] != 0)
-      {
-        pnum = desired_inode->ptrs[1];
-      }
-      else if (pnum == desired_inode->ptrs[1] && desired_inode->iptr != 0)
-      {
-        pnum = *((int*)pages_get_page(desired_inode->iptr) + iptr_index);
-        iptr_index++;
-        continue;
-      }
-      break;
-    }
-  
-    free_inode(desired_direntry->inum);
-  }
-
-  memset(desired_direntry, 0, sizeof(direntry));
-  // assert that it has been delelted
-  assert(desired_direntry->inum == 0);
-
-  // TODO
-  // check to see if any more
-  if (is_block_empty(curr_pnum)) {
-    printf("calling inode shrink from directory delete\n");
-    // inode_shrink();
-  }
-
-  return 0;
-}
 
 // this should only be called when there are no more links/refs, deletes
 // direntry in directory with name
 int directory_delete(inode* dd, const char* name) {
   // assert(dd->refs == 0);
-  printf("called directory delete\n");
 
-  printf("trying to delete: %s\n", name);
-
-  if(strcmp(name, "..") == 0 || strcmp(name, ".") == 0 ) {
-    printf("called delete on . or ..");
-    return 0;
-  }
   int curr_pnum = dd->ptrs[0];
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
@@ -303,25 +235,13 @@ int directory_delete(inode* dd, const char* name) {
  
   desired_inode->refs--;
 
-  // assert( desired_inode->refs >= 0);
-
-  printf("target inode refs are now %d\n", desired_inode->refs);
-
-  // if ((desired_inode->mode & S_IFMT) == S_IFREG)
-  // {
+  
     return delete_file(desired_direntry, desired_inode, curr_pnum);
-  // }
-  // else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
-  // {
-  //   return delete_folder(desired_direntry, desired_inode, curr_pnum);
-  // }
-  // printf("UNREACHABLE\n\n");
+
 }
 
 // cons each of the names of the direntries at page with the rest
 slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
-  printf("entered cons page contents, pnum: %ld, si %ld\n", pnum,
-         starting_index);
   direntry* block = (direntry*)pages_get_page(pnum);
   slist* contents = rest;
   int ii = starting_index;
@@ -338,7 +258,6 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
 
 // will put all the contents of directory into an slist
 slist* directory_list(const char* path) {
-  printf("entered directory list with path: %s\n", path);
 
   char* fname = get_filename_from_path(path);
 

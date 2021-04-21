@@ -10,7 +10,7 @@
 #include "pages.h"
 #include "slist.h"
 
-// a directory cannot have more than 64 entries
+// a page cannot have more than 78 entries
 // 78*sizeof(direntry) = 78*52 ~ 4096
 static int MAX_DIRENTRIES = 78;
 
