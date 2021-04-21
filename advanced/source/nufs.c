@@ -11,23 +11,21 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/sysmacros.h>
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
 #include "bitmap.h"
 #include "directory.h"
+#include "inode.h"
 #include "pages.h"
 #include "slist.h"
-#include "inode.h"
 #include "util.h"
 
 int ROOT_PNUM = -1;
-
-
 
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
@@ -48,8 +46,6 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   int desired_inum = directory_lookup(parent_inode, filename);
 
-
-
   if (desired_inum < 0) {
     // nufs_mknod(path,0100644,0);
     // return nufs_getattr(path,st);
@@ -66,7 +62,6 @@ int nufs_getattr(const char *path, struct stat *st) {
   st->st_mtime = desired_inode->modified;
   st->st_ctime = desired_inode->changed;
   printf("inum in gettattr: %ld\n", desired_inum);
- 
 
   printf("getattr(%s) -> (%d) {mode: %04o, size: %ld}\n", path, rv, st->st_mode,
          st->st_size);
@@ -91,7 +86,7 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rv = 0;
 
   nufs_getattr(path, &st);
-  if ( ((&st)->st_mode & S_IXUSR) != S_IXUSR) {
+  if (((&st)->st_mode & S_IXUSR) != S_IXUSR) {
     return -EACCES;
   }
   // will return contents of leaf directory as linkedlist, just their names
@@ -170,7 +165,7 @@ int nufs_chmod(const char *path, mode_t mode) {
 int nufs_mkdir(const char *path, mode_t mode) {
   int rv = nufs_mknod(path, mode | 040000, 0);
 
-  if(rv < 0) {
+  if (rv < 0) {
     return rv;
   }
   int parent_inum = tree_lookup(path);
@@ -178,13 +173,17 @@ int nufs_mkdir(const char *path, mode_t mode) {
   int desired_inum =
       directory_lookup(parent_inode, get_filename_from_path(path));
 
-  ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].inum = desired_inum;
-  strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].name, ".\0");
+  ((direntry *)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].inum =
+      desired_inum;
+  strcpy(((direntry *)pages_get_page(get_inode(desired_inum)->ptrs[0]))[0].name,
+         ".\0");
 
-  ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].inum = parent_inum;
-  strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].name, "..\0");
+  ((direntry *)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].inum =
+      parent_inum;
+  strcpy(((direntry *)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].name,
+         "..\0");
 
-  assert(get_inode(desired_inum)->refs ==1);
+  assert(get_inode(desired_inum)->refs == 1);
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
 }
@@ -214,38 +213,42 @@ int nufs_unlink(const char *path) {
 
 int nufs_link(const char *from, const char *to) {
   int rv = -1;
-  void* ibm = get_inode_bitmap();
+  void *ibm = get_inode_bitmap();
 
   struct stat to_stat;
   struct stat from_stat;
 
   rv = nufs_getattr(to, &to_stat);
-  if(rv >= 0) {
+  if (rv >= 0) {
     return -EEXIST;
   }
   rv = nufs_getattr(from, &from_stat);
-  if(rv < 0) {
+  if (rv < 0) {
     return -ENOENT;
   }
 
   int parent_inum_from = tree_lookup(from);
-  if(parent_inum_from < 0) {return parent_inum_from;}
-  inode* parent_inode_from = get_inode(parent_inum_from);
+  if (parent_inum_from < 0) {
+    return parent_inum_from;
+  }
+  inode *parent_inode_from = get_inode(parent_inum_from);
   char *filename_from = get_filename_from_path(from);
 
   int linking_inum = directory_lookup(parent_inode_from, filename_from);
-  inode* linking_inode = get_inode(linking_inum);
-
+  inode *linking_inode = get_inode(linking_inum);
 
   int parent_inum_to = tree_lookup(to);
-  if (parent_inum_to < 0) {return parent_inum_to;}
+  if (parent_inum_to < 0) {
+    return parent_inum_to;
+  }
   inode *parent_inode_to = get_inode(parent_inum_to);
 
   char *filename_to = get_filename_from_path(to);
 
   rv = directory_put(parent_inode_to, filename_to, linking_inum);
-  if (rv < 0) {return -ENOSPC;}
-
+  if (rv < 0) {
+    return -ENOSPC;
+  }
 
   linking_inode->refs += 1;
 
@@ -288,17 +291,13 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-
-                
   struct stat st;
   int rv = 0;
 
   nufs_getattr(path, &st);
-  if ( ((&st)->st_mode & S_IRUSR) != S_IRUSR) {
+  if (((&st)->st_mode & S_IRUSR) != S_IRUSR) {
     return -EACCES;
   }
-
-
 
   int parent_inum = tree_lookup(path);
 
@@ -320,22 +319,21 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 
   int bytes_read = 0;
 
-  int pages_start = offset/4096; //inclusive floor
-  int pages_end = bytes_to_pages(offset + size); //exclusive ceiling
-
+  int pages_start = offset / 4096;                // inclusive floor
+  int pages_end = bytes_to_pages(offset + size);  // exclusive ceiling
 
   void *desired_data_block = NULL;
   for (int ii = pages_start; ii < pages_end; ii++) {
-    if (ii <=1) {
+    if (ii <= 1) {
       assert(desired_inode->ptrs[ii] != 0);
       desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
-    }else {
+    } else {
       int jj = ii - 2;
       int *iptr_arr = (int *)pages_get_page(desired_inode->iptr);
       assert(iptr_arr[jj] != 0);
       desired_data_block = pages_get_page(iptr_arr[jj]);
     }
-    memcpy(buf+bytes_read, desired_data_block, min(size, 4096));
+    memcpy(buf + bytes_read, desired_data_block, min(size, 4096));
     bytes_read += min(size, 4096);
   }
   // desired_inode->size += bytes_written;
@@ -351,12 +349,11 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 // Actually write data
 int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
-
   struct stat st;
   int rv = 0;
 
   nufs_getattr(path, &st);
-  if ( ((&st)->st_mode & S_IWUSR) != S_IWUSR) {
+  if (((&st)->st_mode & S_IWUSR) != S_IWUSR) {
     return -EACCES;
   }
 
@@ -373,58 +370,53 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   }
   inode *desired_inode = get_inode(desired_inum);
 
-  if (offset > desired_inode->size)
-  {
+  if (offset > desired_inode->size) {
     grow_inode(desired_inode, offset - desired_inode->size);
   }
 
-  if (offset < desired_inode->size)
-  {
+  if (offset < desired_inode->size) {
     shrink_inode(desired_inode, offset);
   }
 
-
   int bytes_written = 0;
 
-  int pages_start = offset/4096;   
-  int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
+  int pages_start = offset / 4096;
+  int pages_end = bytes_to_pages(offset + size);  // ending index, exclusive
 
-  if(pages_start == pages_end) {
+  if (pages_start == pages_end) {
     pages_start--;
   }
   assert(pages_start >= 0);
 
   void *desired_data_block = NULL;
-  for (int ii  = pages_start; ii < pages_end; ii++) {
-    if (ii <=1) {
-      if(desired_inode->ptrs[ii] == 0) {
+  for (int ii = pages_start; ii < pages_end; ii++) {
+    if (ii <= 1) {
+      if (desired_inode->ptrs[ii] == 0) {
         grow_inode(desired_inode, size);
       }
       assert(desired_inode->ptrs[ii] != 0);
 
       desired_data_block = pages_get_page(desired_inode->ptrs[ii]);
-      if (ii == pages_start)
-      {
+      if (ii == pages_start) {
         desired_data_block += (offset % PAGE_SIZE);
       }
-    }
-    else {  
-      if(desired_inode->iptr == 0) {
+    } else {
+      if (desired_inode->iptr == 0) {
         grow_inode(desired_inode, size);
-      } 
+      }
       int iptr_index = ii - 2;
       assert(desired_inode->iptr != 0);
       int *iptr_arr = (int *)pages_get_page(desired_inode->iptr);
-      if(iptr_arr[iptr_index] == 0) {
+      if (iptr_arr[iptr_index] == 0) {
         grow_inode(desired_inode, size);
       }
       assert(iptr_arr[iptr_index] != 0);
       desired_data_block = pages_get_page(iptr_arr[iptr_index]);
     }
     assert(desired_data_block != NULL);
-    memcpy(desired_data_block, buf+bytes_written, min(size, 4096));
+    memcpy(desired_data_block, buf + bytes_written, min(size, 4096));
     bytes_written += min(size, 4096);
-    if(bytes_written % 4096 != 0) {
+    if (bytes_written % 4096 != 0) {
       assert(ii == pages_end - 1);
     }
   }
@@ -455,43 +447,40 @@ int nufs_ioctl(const char *path, int cmd, void *arg, struct fuse_file_info *fi,
   return rv;
 }
 
-int nufs_readlink(const char* path, char* buf, size_t size) {
+int nufs_readlink(const char *path, char *buf, size_t size) {
+  inode *parent_inode = get_inode(tree_lookup(path));
 
-  inode* parent_inode = get_inode(tree_lookup(path));
-
-  char* filename = get_filename_from_path(path);
-  inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
+  char *filename = get_filename_from_path(path);
+  inode *desired_inode = get_inode(directory_lookup(parent_inode, filename));
 
   nufs_read(path, buf, desired_inode->size, 0, NULL);
   return 0;
 }
 
-int nufs_symlink(const char* to, const char* from) {
+int nufs_symlink(const char *to, const char *from) {
   struct stat to_stat;
   int rv = 0;
   rv = nufs_getattr(to, &to_stat);
-  if(rv < 0) {
+  if (rv < 0) {
     return rv;
   }
 
   rv = nufs_mknod(from, 0120644, (&to_stat)->st_rdev);
-  if(rv < 0) {
+  if (rv < 0) {
     return rv;
   }
-  inode* parent_inode = get_inode(tree_lookup(from));
+  inode *parent_inode = get_inode(tree_lookup(from));
 
-  char* filename = get_filename_from_path(from);
-  inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
+  char *filename = get_filename_from_path(from);
+  inode *desired_inode = get_inode(directory_lookup(parent_inode, filename));
   desired_inode->size = strlen(to);
 
-  
   nufs_write(from, to, strlen(to), 0, NULL);
 
-  printf("symlink success\n"); 
+  printf("symlink success\n");
 
   return 0;
-  }
-
+}
 
 void nufs_init_ops(struct fuse_operations *ops) {
   memset(ops, 0, sizeof(struct fuse_operations));
@@ -513,7 +502,6 @@ void nufs_init_ops(struct fuse_operations *ops) {
   ops->ioctl = nufs_ioctl;
   ops->symlink = nufs_symlink;
   ops->readlink = nufs_readlink;
-  
 };
 
 struct fuse_operations nufs_ops;
@@ -571,7 +559,7 @@ void init_root() {
 
   // storing first direntry in root dir, itself,
   direntry *root_dirent = (direntry *)root_block;
-  strcpy(root_dirent->name, ".\0");  
+  strcpy(root_dirent->name, ".\0");
   // root direntry coresponds to first inode
   root_dirent->inum = 0;
 }

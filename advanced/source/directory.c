@@ -63,7 +63,6 @@ int directory_lookup(inode* dd, const char* name) {
   return desired_direntry->inum;
 }
 
-
 // Returns the inum of parent directory of the filename at the end of the path
 int tree_lookup(const char* path) {
   slist* delim_path = s_split(strdup(path), '/');
@@ -101,7 +100,6 @@ int first_free_entry_in_block(int offset, int pnum) {
 
 // Puts an inum with the given name in the given parent directory
 int directory_put(inode* dd, const char* name, int inum) {
-
   int rv = 0;
   int curr_pnum = dd->ptrs[0];
   int iptr_index = -1;
@@ -109,8 +107,7 @@ int directory_put(inode* dd, const char* name, int inum) {
 
   int offset = 1;
   // If it ain't the root
-  if (dd->ptrs[0] != 2)
-  {
+  if (dd->ptrs[0] != 2) {
     offset = 2;
   }
 
@@ -144,8 +141,7 @@ int directory_put(inode* dd, const char* name, int inum) {
   strcpy(new_dirent->name, name);
 
   dd->size += sizeof(direntry);
-  
-  
+
   assert(strcmp(new_dirent->name, name) == 0);
   // new_dirent->name = buf;
   printf("exiting directory put: success\n");
@@ -169,11 +165,10 @@ int is_block_empty(int pnum) {
 }
 
 // Deletes a single file
-int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
-{
+int delete_file(direntry* desired_direntry, inode* desired_inode,
+                int curr_pnum) {
   // Delete the inode if refs = 0
-  if (desired_inode->refs == 0)
-  {
+  if (desired_inode->refs == 0) {
     free_inode(desired_direntry->inum);
   }
 
@@ -191,7 +186,6 @@ int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
   return 0;
 }
 
-
 // this should only be called when there are no more links/refs, deletes
 // direntry in directory with name
 int directory_delete(inode* dd, const char* name) {
@@ -203,12 +197,9 @@ int directory_delete(inode* dd, const char* name) {
 
   // this will run until it finds matching direntry or checks all direntries
   while (find_in_block(curr_pnum, name) < 0) {
-    if (iptr_index < 0)
-    {
+    if (iptr_index < 0) {
       curr_pnum = dd->ptrs[1];
-    }
-    else
-    {
+    } else {
       curr_pnum = *(iptr_page + iptr_index);
     }
 
@@ -228,12 +219,9 @@ int directory_delete(inode* dd, const char* name) {
   int mode = desired_inode->mode & S_IFMT;
   int filemode = S_IFREG;
 
- 
   desired_inode->refs--;
 
-  
-    return delete_file(desired_direntry, desired_inode, curr_pnum);
-
+  return delete_file(desired_direntry, desired_inode, curr_pnum);
 }
 
 // cons each of the names of the direntries at page with the rest
@@ -254,7 +242,6 @@ slist* cons_page_contents(int pnum, int starting_index, slist* rest) {
 
 // will put all the contents of directory into an slist
 slist* directory_list(const char* path) {
-
   char* fname = get_filename_from_path(path);
 
   int parent_inum = tree_lookup(path);
@@ -263,12 +250,9 @@ slist* directory_list(const char* path) {
 
   // TODO refactor this
   slist* contents = s_cons(".", NULL);
-  if (dd->ptrs[0] == 2)
-  {
+  if (dd->ptrs[0] == 2) {
     contents = cons_page_contents(curr_pnum, 1, contents);
-  }
-  else
-  {
+  } else {
     contents = cons_page_contents(curr_pnum, 2, contents);
   }
 

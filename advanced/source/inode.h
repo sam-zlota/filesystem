@@ -7,7 +7,6 @@
 
 #include "pages.h"
 
-
 typedef struct inode {
   int refs;     // reference count
   int mode;     // permission & type

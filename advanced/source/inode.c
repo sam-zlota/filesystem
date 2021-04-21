@@ -11,9 +11,7 @@
 #include "pages.h"
 #include "util.h"
 
-
 int alloc_inode() {
-  
   void *ibm = get_inode_bitmap();
 
   for (int ii = 1; ii < 256; ++ii) {
@@ -48,7 +46,6 @@ int grow_inode(inode *node, int size) {
 
   assert(pages_needed > 0);
 
-
   int *iptr_arr = (int *)pages_get_page(node->iptr);
   int iptr_index = 0;
   while (pages_needed > 0 && iptr_index < 256) {
@@ -79,57 +76,50 @@ int grow_inode(inode *node, int size) {
 // Shrinks the inode to the given size
 int shrink_inode(inode *node, int size) {
   node->size -= size;
-  // This is the number of pages we need to leave allocated. It gets decremented as we go through page_targets
+  // This is the number of pages we need to leave allocated. It gets decremented
+  // as we go through page_targets
   int dealloc_target = size / PAGE_SIZE;
   int dealloc_space = 0;
   int page_target = node->ptrs[0];
   int *ppage_target = &node->ptrs[0];
   int iptr_index = -1;
 
-  while (1)
-  {
-    // The first page that we need to dealloc is the weird case where we might not have to deallocate the whole page
-    if (dealloc_target == 0)
-    {
-      void* target_address = (char*)pages_get_page(page_target) + (size % PAGE_SIZE);
+  while (1) {
+    // The first page that we need to dealloc is the weird case where we might
+    // not have to deallocate the whole page
+    if (dealloc_target == 0) {
+      void *target_address =
+          (char *)pages_get_page(page_target) + (size % PAGE_SIZE);
       memset(target_address, 0, PAGE_SIZE - (size % PAGE_SIZE));
 
-      // Reason why we can't have size == 0 is because then we'd try to set iptrs[0] = 0, and that's no good
-      if ((size % PAGE_SIZE) == 0 && size != 0)
-      {
+      // Reason why we can't have size == 0 is because then we'd try to set
+      // iptrs[0] = 0, and that's no good
+      if ((size % PAGE_SIZE) == 0 && size != 0) {
         free_page(page_target);
         memset(ppage_target, 0, sizeof(int));
       }
     }
-    
+
     // Subsequently, we deallocate the whole page
-    if (dealloc_target < 0)
-    {
+    if (dealloc_target < 0) {
       free_page(page_target);
       memset(ppage_target, 0, sizeof(int));
     }
 
     dealloc_target--;
 
-    if (page_target == node->ptrs[0] && node->ptrs[1] != 0)
-    {
+    if (page_target == node->ptrs[0] && node->ptrs[1] != 0) {
       page_target = node->ptrs[1];
       ppage_target = &node->ptrs[1];
-    }
-    else if (page_target == node->ptrs[1] && node->iptr != 0)
-    {
+    } else if (page_target == node->ptrs[1] && node->iptr != 0) {
       iptr_index = 0;
       ppage_target = pages_get_page(node->iptr);
-      page_target = *(int*)ppage_target;
-    }
-    else if (iptr_index >= 0 && iptr_index < (PAGE_SIZE / sizeof(int)))
-    {
+      page_target = *(int *)ppage_target;
+    } else if (iptr_index >= 0 && iptr_index < (PAGE_SIZE / sizeof(int))) {
       iptr_index++;
-      ppage_target = ((int*)pages_get_page(node->iptr) + iptr_index);
+      ppage_target = ((int *)pages_get_page(node->iptr) + iptr_index);
       page_target = *ppage_target;
-    }
-    else
-    {
+    } else {
       break;
     }
   }
@@ -173,24 +163,18 @@ void coallesce_direntries(inode *node, int size) {
   }
 }
 
-void free_inode(int inum)
-{
+void free_inode(int inum) {
   // Free the pages associated with this inode
-  inode* target = get_inode(inum);
-  
-  if (target->ptrs[0] != 0)
-    free_page(target->ptrs[0]);
-  if (target->ptrs[1] != 0)
-    free_page(target->ptrs[1]);
-  if (target->iptr != 0)
-  {
-    int* iptr_arr = (int*)pages_get_page(target->iptr);
+  inode *target = get_inode(inum);
+
+  if (target->ptrs[0] != 0) free_page(target->ptrs[0]);
+  if (target->ptrs[1] != 0) free_page(target->ptrs[1]);
+  if (target->iptr != 0) {
+    int *iptr_arr = (int *)pages_get_page(target->iptr);
     int curr_pnum = -1;
-    for (int ii = 0; ii < 256; ii++ )
-    {
-      curr_pnum = * (iptr_arr + ii);
-      if(curr_pnum != 0)
-        free_page(curr_pnum);
+    for (int ii = 0; ii < 256; ii++) {
+      curr_pnum = *(iptr_arr + ii);
+      if (curr_pnum != 0) free_page(curr_pnum);
     }
     free_page(target->iptr);
   }
@@ -201,4 +185,3 @@ void free_inode(int inum)
   // Mark the bitmap as the inode is occupied
   bitmap_put(get_inode_bitmap(), inum, 0);
 }
-
