@@ -78,6 +78,9 @@ int nufs_getattr(const char *path, struct stat *st) {
   st->st_uid = getuid();
   st->st_nlink = desired_inode->refs;
   st->st_ino = desired_inum;
+  st->st_atime = desired_inode->accessed;
+  st->st_mtime = desired_inode->modified;
+  st->st_ctime = desired_inode->changed;
   printf("inum in gettattr: %ld\n", desired_inum);
  
 
@@ -156,6 +159,9 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
   new_inode->mode = mode;
   new_inode->refs = 1;
   new_inode->size = 0;
+  new_inode->accessed = time(NULL);
+  new_inode->modified = time(NULL);
+  new_inode->changed = time(NULL);
 
   printf("mknod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
@@ -176,6 +182,8 @@ int nufs_chmod(const char *path, mode_t mode) {
   }
   inode *desired_inode = get_inode(desired_inum);
   desired_inode->mode = mode;
+  desired_inode->changed = time(NULL);
+
   printf("chmod(%s, %04o) -> %d\n", path, mode, rv);
   return rv;
 }
@@ -399,6 +407,8 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
   assert(bytes_read == size);
   rv = bytes_read;
 
+  desired_inode->accessed = time(NULL);
+
   printf("read(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
 }
@@ -437,11 +447,8 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
 
   int bytes_written = 0;
 
-
   int pages_start = offset/4096;   
   int pages_end = bytes_to_pages(offset + size); //ending index, exclusive
-
-
 
   if(pages_start == pages_end) {
     pages_start--;
@@ -486,6 +493,9 @@ int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
   desired_inode->size += bytes_written;
   assert(bytes_written == size);
   rv = bytes_written;
+
+  desired_inode->modified = time(NULL);
+  desired_inode->changed = time(NULL);
 
   printf("write(%s, %ld bytes, @+%ld) -> %d\n", path, size, offset, rv);
   return rv;
