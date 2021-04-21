@@ -291,6 +291,9 @@ int nufs_link(const char *from, const char *to) {
 }
 
 int nufs_rmdir(const char *path) {
+  
+  tree_lookup(path);
+
   int rv = nufs_unlink(path);
 
   printf("rmdir(%s) -> %d\n", path, rv);

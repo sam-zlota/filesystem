@@ -188,7 +188,7 @@ int delete_file(direntry* desired_direntry, inode* desired_inode, int curr_pnum)
   // Delete the inode if refs = 0
   if (desired_inode->refs == 0)
   {
-    // free_inode(desired_direntry->inum);
+    free_inode(desired_direntry->inum);
   }
 
   memset(desired_direntry, 0, sizeof(direntry));
@@ -240,7 +240,7 @@ int delete_folder(direntry* desired_direntry, inode* desired_inode, int curr_pnu
       break;
     }
   
-    // free_inode(desired_direntry->inum);
+    free_inode(desired_direntry->inum);
   }
 
   memset(desired_direntry, 0, sizeof(direntry));
@@ -301,15 +301,15 @@ int directory_delete(inode* dd, const char* name) {
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
-  if ((desired_inode->mode & S_IFMT) == S_IFREG)
-  {
+  // if ((desired_inode->mode & S_IFMT) == S_IFREG)
+  // {
     return delete_file(desired_direntry, desired_inode, curr_pnum);
-  }
-  else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
-  {
-    return delete_folder(desired_direntry, desired_inode, curr_pnum);
-  }
-  printf("UNREACHABLE\n\n");
+  // }
+  // else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
+  // {
+  //   return delete_folder(desired_direntry, desired_inode, curr_pnum);
+  // }
+  // printf("UNREACHABLE\n\n");
 }
 
 // cons each of the names of the direntries at page with the rest
