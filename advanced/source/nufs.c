@@ -153,19 +153,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
   inode *new_inode = get_inode(new_inum);
 
-
-
-  // if( st.st_mode & S_IFMT == S_IFDIR) {
-
-  // }
-  // if( st.st_mode & S_IFMT == S_IFREG) {
-    
-  // }
-  // if( st.st_mode & S_IFMT == S_IFLNK) {
-    
-  // }
-
-  // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = mode;
   new_inode->refs = 1;
   new_inode->size = 0;
@@ -215,6 +202,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
   ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].inum = parent_inum;
   strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].name, "..\0");
 
+  assert(get_inode(desired_inum)->refs ==1);
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
 }
