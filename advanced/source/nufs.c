@@ -359,8 +359,11 @@ int nufs_rename(const char *from, const char *to) {
 
 
 
-  nufs_link(to, from);
+  nufs_link(from, to);
   nufs_unlink(from);
+
+
+
   printf("rename(%s => %s) -> %d\n", from, to, rv);
   return rv;
 }
