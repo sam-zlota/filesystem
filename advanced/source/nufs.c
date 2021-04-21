@@ -279,11 +279,44 @@ int nufs_link(const char *from, const char *to) {
 }
 
 int nufs_rmdir(const char *path) {
-  int rv = nufs_unlink(path);
+  // int rv = nufs_unlink(path);
+
+  // printf("rmdir(%s) -> %d\n", path, rv);
+  // return rv;
+
+
+   int rv = 0;
+  
+  int parent_inum = tree_lookup(path);
+  if (parent_inum < 0) {
+    printf("exiting unlink: failure, tree_lookup\n");
+    return parent_inum;
+  }
+
+  inode *parent_inode = get_inode(parent_inum);
+  char *dirname = get_filename_from_path(path);
+  int desired_inum = directory_lookup(parent_inode, dirname);
+  if (desired_inum < 0) {
+    printf("exiting unlink: failure, directory lookup\n");
+    return desired_inum;
+  }
+
+  inode *desired_inode = get_inode(desired_inum);
+
+  desired_inode->refs--;
+
+  // TODO check that we're actually deleting a directory
+  //directory_delete();
 
   printf("rmdir(%s) -> %d\n", path, rv);
   return rv;
+
+
+
+
+
 }
+
 
 // implements: man 2 rename
 // called to move a file within the same filesystem
