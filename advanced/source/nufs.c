@@ -27,19 +27,7 @@
 
 int ROOT_PNUM = -1;
 
-int nufs_mknod(const char *path, mode_t mode, dev_t rdev);
 
-// TODO: need to implement: init dir (to init directories other than root),
-// shrink inode(coalescing), fix read and write
-
-// implementation for: man 2 access
-// Checks if a file exists.
-int nufs_access(const char *path, int mask) {
-  // TODO: handle permissions
-  int rv = 0;
-  printf("access(%s, %04o) -> %d\n", path, mask, rv);
-  return rv;
-}
 
 // implementation for: man 2 stat
 // gets an object's attributes (type, permissions, size, etc)
@@ -60,10 +48,7 @@ int nufs_getattr(const char *path, struct stat *st) {
 
   int desired_inum = directory_lookup(parent_inode, filename);
 
-  // if (desired_inum == 0) {
-  //   // will return zero if given curr directory
-  //   desired_inum += parent_inum;
-  // }
+
 
   if (desired_inum < 0) {
     // nufs_mknod(path,0100644,0);
@@ -72,7 +57,6 @@ int nufs_getattr(const char *path, struct stat *st) {
   }
 
   inode *desired_inode = get_inode(desired_inum);
-  // TODO: handle adding directories
   st->st_mode = desired_inode->mode;
   st->st_size = desired_inode->size;
   st->st_uid = getuid();
@@ -89,6 +73,16 @@ int nufs_getattr(const char *path, struct stat *st) {
   return rv;
 }
 
+// implementation for: man 2 access
+// Checks if a file exists.
+int nufs_access(const char *path, int mask) {
+  int rv = 0;
+  struct stat st;
+  rv = nufs_getattr(path, &st);
+  printf("access(%s, %04o) -> %d\n", path, mask, rv);
+  return rv;
+}
+
 // implementation for: man 2 readdir
 // lists the contents of a directory
 int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -96,6 +90,10 @@ int nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct stat st;
   int rv = 0;
 
+  nufs_getattr(path, &st);
+  if ( ((&st)->st_mode & S_IXUSR) != S_IXUSR) {
+    return -EACCES;
+  }
   // will return contents of leaf directory as linkedlist, just their names
 
   slist *contents = directory_list(path);
@@ -262,7 +260,6 @@ int nufs_rmdir(const char *path) {
   return rv;
 }
 
-
 // implements: man 2 rename
 // called to move a file within the same filesystem
 int nufs_rename(const char *from, const char *to) {
@@ -291,8 +288,18 @@ int nufs_open(const char *path, struct fuse_file_info *fi) {
 // Actually read data
 int nufs_read(const char *path, char *buf, size_t size, off_t offset,
               struct fuse_file_info *fi) {
-  printf("entered read with size: %ld\n", size);
+
+                
+  struct stat st;
   int rv = 0;
+
+  nufs_getattr(path, &st);
+  if ( ((&st)->st_mode & S_IRUSR) != S_IRUSR) {
+    return -EACCES;
+  }
+
+
+
   int parent_inum = tree_lookup(path);
 
   if (parent_inum < 0) {
@@ -344,7 +351,15 @@ int nufs_read(const char *path, char *buf, size_t size, off_t offset,
 // Actually write data
 int nufs_write(const char *path, const char *buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
+
+  struct stat st;
   int rv = 0;
+
+  nufs_getattr(path, &st);
+  if ( ((&st)->st_mode & S_IWUSR) != S_IWUSR) {
+    return -EACCES;
+  }
+
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
     return parent_inum;
@@ -451,7 +466,6 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
   return 0;
 }
 
-
 int nufs_symlink(const char* to, const char* from) {
   struct stat to_stat;
   int rv = 0;
@@ -473,12 +487,7 @@ int nufs_symlink(const char* to, const char* from) {
   
   nufs_write(from, to, strlen(to), 0, NULL);
 
-  
-
-
   printf("symlink success\n"); 
-
-
 
   return 0;
   }

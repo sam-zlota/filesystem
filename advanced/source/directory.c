@@ -63,10 +63,6 @@ int directory_lookup(inode* dd, const char* name) {
   return desired_direntry->inum;
 }
 
-int get_curr_dir(const char* path)
-{
-  
-}
 
 // Returns the inum of parent directory of the filename at the end of the path
 int tree_lookup(const char* path) {
