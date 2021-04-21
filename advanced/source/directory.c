@@ -265,7 +265,7 @@ int directory_delete(inode* dd, const char* name) {
 
 
   if(strcmp(name, "..") == 0) {
-    printf("called delete on ..")
+    printf("called delete on ..");
     return 0;
   }
   int curr_pnum = dd->ptrs[0];
