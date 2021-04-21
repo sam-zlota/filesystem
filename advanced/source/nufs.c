@@ -210,6 +210,8 @@ int nufs_mkdir(const char *path, mode_t mode) {
 int nufs_unlink(const char *path) {
   int rv = 0;
   printf("entered unlink\n");
+  printf("trying to unlink: %s\n", path);
+
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
     printf("exiting unlink: failure, tree_lookup\n");
@@ -284,8 +286,9 @@ int nufs_rmdir(const char *path) {
   // printf("rmdir(%s) -> %d\n", path, rv);
   // return rv;
 
+  printf("trying to rmdir: %s\n", path);
 
-   int rv = 0;
+  int rv = 0;
   
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
