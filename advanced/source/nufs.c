@@ -153,19 +153,6 @@ int nufs_mknod(const char *path, mode_t mode, dev_t rdev) {
 
   inode *new_inode = get_inode(new_inum);
 
-
-
-  // if( st.st_mode & S_IFMT == S_IFDIR) {
-
-  // }
-  // if( st.st_mode & S_IFMT == S_IFREG) {
-    
-  // }
-  // if( st.st_mode & S_IFMT == S_IFLNK) {
-    
-  // }
-
-  // TODO: check mode, and then call dir init if we are making a directory
   new_inode->mode = mode;
   new_inode->refs = 1;
   new_inode->size = 0;
@@ -215,6 +202,7 @@ int nufs_mkdir(const char *path, mode_t mode) {
   ((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].inum = parent_inum;
   strcpy(((direntry*)pages_get_page(get_inode(desired_inum)->ptrs[0]))[1].name, "..\0");
 
+  assert(get_inode(desired_inum)->refs ==1);
   printf("mkdir(%s) -> %d\n", path, rv);
   return rv;
 }
@@ -222,6 +210,8 @@ int nufs_mkdir(const char *path, mode_t mode) {
 int nufs_unlink(const char *path) {
   int rv = 0;
   printf("entered unlink\n");
+  printf("trying to unlink: %s\n", path);
+
   int parent_inum = tree_lookup(path);
   if (parent_inum < 0) {
     printf("exiting unlink: failure, tree_lookup\n");
@@ -291,14 +281,13 @@ int nufs_link(const char *from, const char *to) {
 }
 
 int nufs_rmdir(const char *path) {
-  
   tree_lookup(path);
-
   int rv = nufs_unlink(path);
 
   printf("rmdir(%s) -> %d\n", path, rv);
   return rv;
 }
+
 
 // implements: man 2 rename
 // called to move a file within the same filesystem
@@ -505,14 +494,8 @@ int nufs_readlink(const char* path, char* buf, size_t size) {
 
   char* filename = get_filename_from_path(path);
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
-  
 
- 
-  size_t path_size = *((size_t*)pages_get_page(desired_inode->ptrs[0]));
-
-  nufs_read(path, buf,path_size, sizeof(size_t), NULL);
-
-
+  nufs_read(path, buf, desired_inode->size, 0, NULL);
   return 0;
 }
 
@@ -534,15 +517,12 @@ int nufs_symlink(const char* to, const char* from) {
 
   char* filename = get_filename_from_path(from);
   inode* desired_inode = get_inode(directory_lookup(parent_inode, filename));
-  
-  size_t* size = (size_t*)pages_get_page(desired_inode->ptrs[0]);
-  
+  desired_inode->size = strlen(to);
 
-  *size = strlen(to);
-  printf("trying to copy with size %ld\n", *size); 
+  // printf("trying to copy with size %ld\n", *size); 
   // void* path_address = pages_get_page(desired_inode->ptrs[0]) + sizeof(size_t);
   
-  nufs_write(from,to, *size, sizeof(size_t), NULL);
+  nufs_write(from, to, strlen(to), 0, NULL);
 
   // strcpy(info->target_path,to);
 

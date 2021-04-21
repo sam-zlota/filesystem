@@ -263,6 +263,12 @@ int directory_delete(inode* dd, const char* name) {
   // assert(dd->refs == 0);
   printf("called directory delete\n");
 
+  printf("trying to delete: %s\n", name);
+
+  if(strcmp(name, "..") == 0 || strcmp(name, ".") == 0 ) {
+    printf("called delete on . or ..");
+    return 0;
+  }
   int curr_pnum = dd->ptrs[0];
   int iptr_index = -1;
   int* iptr_page = (int*)pages_get_page(dd->iptr);
@@ -297,7 +303,7 @@ int directory_delete(inode* dd, const char* name) {
  
   desired_inode->refs--;
 
-  assert( desired_inode->refs >= 0);
+  // assert( desired_inode->refs >= 0);
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
