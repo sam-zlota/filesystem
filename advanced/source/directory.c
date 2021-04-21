@@ -297,7 +297,7 @@ int directory_delete(inode* dd, const char* name) {
  
   desired_inode->refs--;
 
-  assert( desired_inode->refs >= 0);
+  // assert( desired_inode->refs >= 0);
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
