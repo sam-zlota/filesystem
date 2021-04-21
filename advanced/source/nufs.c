@@ -326,24 +326,41 @@ int nufs_rmdir(const char *path) {
 int nufs_rename(const char *from, const char *to) {
   int rv = 0;
   printf("entered rename with from: %s to: %s\n", from, to);
-  int parent_inum = tree_lookup(from);
-  if (parent_inum < 0) {
-    return parent_inum;
-  }
+  // int parent_inum_from = tree_lookup(from);
+  // if (parent_inum_from < 0) {
+  //   return parent_inum_from;
+  // }
+  // inode *parent_inode_from = get_inode(parent_inum_from);
+  // char *filename_from = get_filename_from_path(from);
+  // int desired_inum_from = directory_lookup(parent_inode_from, filename_from);
+  // inode *desired_inode_from = get_inode(desired_inum_from);
 
-  inode *parent_inode = get_inode(parent_inum);
-  char *filename = get_filename_from_path(from);
 
-  int desired_inum = directory_lookup(parent_inode, filename);
 
-  inode *desired_inode = get_inode(desired_inum);
+  // int parent_inum_to = tree_lookup(to);
+  // if (parent_inum_to < 0) {
+  //   return parent_inum_to;
+  // }
+  // inode *parent_inode_to = get_inode(parent_inum_to);
+  // char *filename_to = get_filename_from_path(to);
+  // // int desired_inum_from = directory_lookup(parent_inode_from, filename_from);
+  // // inode *desired_inode_from = get_inode(desired_inum_from);
 
-  directory_put(parent_inode, get_filename_from_path(to), desired_inum);
-  directory_delete(parent_inode, filename);
 
-  assert(directory_lookup(parent_inode, filename) < 0);
-  assert(directory_lookup(parent_inode, get_filename_from_path(to)) > 0);
 
+
+
+
+  // directory_put(parent_inode, get_filename_from_path(to), desired_inum);
+  // directory_delete(parent_inode, filename);
+
+  // assert(directory_lookup(parent_inode, filename) < 0);
+  // assert(directory_lookup(parent_inode, get_filename_from_path(to)) > 0);
+
+
+
+  nufs_link(to, from);
+  nufs_unlink(from);
   printf("rename(%s => %s) -> %d\n", from, to, rv);
   return rv;
 }
