@@ -301,14 +301,14 @@ int directory_delete(inode* dd, const char* name) {
 
   printf("target inode refs are now %d\n", desired_inode->refs);
 
-  if ((desired_inode->mode & S_IFMT) == S_IFREG)
-  {
+  // if ((desired_inode->mode & S_IFMT) == S_IFREG)
+  // {
     return delete_file(desired_direntry, desired_inode, curr_pnum);
-  }
-  else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
-  {
-    return delete_folder(desired_direntry, desired_inode, curr_pnum);
-  }
+  // }
+  // else if ((desired_inode->mode & S_IFMT) == S_IFDIR)
+  // {
+  //   return delete_folder(desired_direntry, desired_inode, curr_pnum);
+  // }
   printf("UNREACHABLE\n\n");
 }
 
