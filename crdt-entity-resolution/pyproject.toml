@@ -1,0 +1,23 @@
+[project]
+name = "crdt-er"
+version = "0.1.0"
+description = "Prototype: dynamic, incremental entity resolution whose resolved view converges like a CRDT"
+requires-python = ">=3.10"
+dependencies = [
+    "pycrdt>=0.12",      # Yjs CRDT (Rust yrs bindings): replicated record + evidence store
+    "rapidfuzz>=3.0",    # string similarity for pairwise scoring
+    "datasketch>=1.6",   # MinHash LSH for incremental blocking
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "hypothesis>=6"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["crdt_er"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
