@@ -129,10 +129,17 @@ class PersonMatcher:
 
     Blocking keys are the email, the phone and the zip, so every pair that
     *could* match shares at least one key.
+
+    ``zip_blocking="zip+initials"`` narrows the zip block to records whose
+    name initials also agree ("John Smith" and "Smith, J." both give "js").
+    Large deployments need this: a plain zip block grows with the population
+    and makes every insert compare against thousands of records.  It trades
+    a little recall (a typo in a first letter) for bounded block sizes.
     """
 
     phone_name_threshold: float = 0.80
     zip_name_threshold: float = 0.93
+    zip_blocking: str = "zip"
 
     def normalize(self, attrs: Mapping[str, Any]) -> Normalized:
         fields = {
@@ -147,7 +154,11 @@ class PersonMatcher:
         if fields["phone"]:
             keys.add("phone:" + fields["phone"])
         if fields["zip"]:
-            keys.add("zip:" + fields["zip"])
+            initials = "".join(sorted(tok[0] for tok in fields["name"].split()))
+            if self.zip_blocking == "zip+initials" and initials:
+                keys.add("zipname:" + fields["zip"] + ":" + initials)
+            else:
+                keys.add("zip:" + fields["zip"])
         return Normalized(keys=frozenset(keys), fields=tuple(sorted(fields.items())))
 
     def match(self, a: Normalized, b: Normalized) -> bool:

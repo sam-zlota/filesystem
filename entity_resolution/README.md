@@ -7,9 +7,15 @@ same clustering. Resolution is **incremental**: each change only re-examines
 the records it touches and the handful of clusters they belong to.
 
 ```
-python demo.py                            # narrated walk-through
-python -m unittest discover -s tests -t . # 16 tests, incl. randomized convergence
+pip install -r requirements.txt           # msgpack, used only by the distributed mode
+python demo.py                            # single-process walk-through
+python ha_demo.py                         # 3-process cluster: kill, partition, restart
+python bench.py --nodes 1 2 4 --verify    # throughput vs cluster size
+python -m unittest discover -s tests -t . # 27 tests
 ```
+
+The first half of this document describes the CRDT core. The second half,
+**Distributed mode**, describes how it runs as a multi-node cluster.
 
 ## The idea in one paragraph
 
@@ -31,7 +37,8 @@ the clustering materialised and repairs it locally as deltas arrive.
 | `crdt_er/matching.py` | `Matcher` protocol (normalise + blocking keys + symmetric `match`), Jaro-Winkler, and a rule-based `PersonMatcher`. |
 | `crdt_er/engine.py` | `Replica`: local ops that emit deltas, `merge`, the incremental `_refresh`, queries, `check_invariants`, and the batch oracle `resolve_from_scratch`. |
 | `crdt_er/simulate.py` | `Network`: random-order, duplicating delivery plus full-state anti-entropy. |
-| `tests/` | Lattice laws on random histories, conflict scenarios, 20-seed randomized convergence. |
+| `crdt_er/dist/` | Distributed mode: replicated state with match facts, node logic, asyncio server, client, log, simulator, launcher. |
+| `tests/` | Lattice laws, conflict scenarios, randomized convergence, distributed chaos simulation, a real multi-process cluster test. |
 
 ## Replicated state
 
@@ -117,3 +124,119 @@ and the randomized test does this after operations throughout the run.
 * Component recomputation is bounded by the size of the affected clusters;
   pathological hub records make that bound large. A dynamic-connectivity
   structure would tighten it.
+
+---
+
+# Distributed mode
+
+`crdt_er.dist` runs the same CRDT as a cluster of OS processes that talk over
+TCP. Every node accepts reads and writes, and no node is a leader. Nodes keep
+working through crashes and network partitions, and they converge once
+messages flow again.
+
+## Architecture
+
+```
+            clients (any node; fail over to the next on error)
+               |                 |                 |
+         +-----v-----+     +-----v-----+     +-----v-----+
+         |  node n0  |<--->|  node n1  |<--->|  node n2  |   full mesh, TCP
+         |-----------|     |-----------|     |-----------|
+         | state     |     | state     |     | state     |   every node: all records,
+         | view      |     | view      |     | view      |   assertions, facts, entities
+         | shards A  |     | shards B  |     | shards C  |   matching: own shards only
+         | log       |     | log       |     | log       |
+         +-----------+     +-----------+     +-----------+
+```
+
+* **Shared state is replicated, not centralised.** Each node holds a replica of
+  the lattice: the record map, the assertion set, and a set of **match facts**.
+  Nothing is locked or coordinated, and every change travels as a delta.
+* **Matching is partitioned.** Blocking keys hash into shards, and shards map to
+  live nodes by rendezvous hashing. A node compares records only inside the
+  blocks it owns. A pair that shares several keys is compared only under its
+  smallest shared key, so the cluster does every comparison exactly once.
+* **Results are shared as facts.** A fact says "version x of record a matches
+  version y of record b". It is immutable, and it is valid only while both
+  versions are current. Version numbers only grow, so a stale fact can never
+  become valid again, and dropping stale facts keeps the merge a lattice join.
+  Every node builds the same entity view from the same facts.
+* **Each node is one event loop.** There are no threads or locks inside a node.
+  Parallelism comes from running more processes.
+
+## Delivery, recovery and durability
+
+| Mechanism | What it handles |
+| --- | --- |
+| Delta ids `(origin replica, seq)` and version vectors | Duplicates are detected before any work is done. Nodes know exactly which deltas they lack. |
+| Anti-entropy: periodic version-vector exchange with a random peer | Lost messages, a peer that was down, and partitions. The peer resends only the missing deltas. |
+| Write-ahead log, written before acknowledging or forwarding | Restarts. A node replays its log, and a torn final frame is truncated. |
+| Incarnation counter, fsynced at startup and part of the replica id | A node that lost its log tail cannot reissue a timestamp or tag that peers already hold. |
+| Heartbeat failure detector, then shard reassignment and rescan | A dead node's matching work moves to survivors within about 1.5 seconds. |
+| Client fail-over with client-chosen record ids | Writes keep succeeding while any node is up. Retrying is harmless because a re-sent add is just another version of the same record. |
+
+Nodes can briefly disagree about who owns a shard. Then two nodes match the
+same block, or for a moment nobody does. Both cases are safe. Duplicate facts
+are identical because the matcher is deterministic, and a shard's new owner
+always rescans it.
+
+## Measured on this prototype
+
+These numbers come from 4 CPU cores shared by every node process and the load
+generator. There are 20,000 records, 256 shards, and `--verify` passes on every
+row, meaning the final view equals the batch oracle.
+
+| Nodes | Normal blocks: rec/s | Speedup | Large blocks: rec/s | Speedup |
+| --- | --- | --- | --- | --- |
+| 1 | 2,400 | 1.0x | 1,040 | 1.0x |
+| 2 | 4,370 | 1.6x | 1,850 | 1.8x |
+| 4 | 5,590 | 2.3x | 3,000 | 2.9x |
+
+"Resolved" means every node has finished matching and holds the same entity
+view. Comparisons split evenly across nodes. Scaling stays below linear for two
+reasons. Every node still applies every record and fact to its own view, which
+takes about 1 CPU-second per 20,000 records. And the 4-node run had 5 busy
+processes on 4 cores. The more each record costs to match, the closer the
+speedup gets to linear, which is why the large-block column scales better. A
+real deployment with an ML scoring model would sit further in that direction.
+
+The writes are acknowledged at 15,000 to 22,000 records/s on any cluster size,
+because acknowledging a write never waits for matching.
+
+`ha_demo.py` on 3 processes, abridged:
+
+```
+[ 2.3s] SIGKILL n1 (writes in flight to n1 fail over to other nodes)
+[ 4.8s] survivors see alive=['n0', 'n2']; they now own 64/64 shards between them
+[ 4.8s] partition: n0 | n2 (both sides keep accepting writes)
+[ 7.3s] during partition: n0 has 8560 records, n2 has 7520; each owns 64 and 64 shards
+[ 8.6s] n1 restarted as n1#2 with 2920 records from its log
+[ 9.4s] writer done: 12000 records acked ..., 0 failed batches, 1 client failovers
+[10.7s] all nodes converged 1.4s after the last write: 12000 records, 3942 entities
+[15.2s] identical state on all nodes: True; entities equal batch oracle: True
+```
+
+## How it is tested
+
+* `tests/test_dist.py` drives the node logic through a deterministic
+  in-process simulator. It runs 33 chaos histories with crashes that lose log
+  tails, restarts, partitions, message loss and duplication, and nodes that
+  disagree about membership. Every one must end with identical state on all
+  nodes and entities equal to the batch oracle. It also checks that each
+  candidate pair is compared exactly once across the cluster. Deliberately
+  breaking stale-fact removal, shard takeover, incarnations, anti-entropy or
+  the pair deduplication makes these tests fail.
+* `tests/test_dist_cluster.py` runs the kill, partition and restart scenario on
+  real processes, and checks log truncation and incarnation persistence.
+
+## What a production version would change
+
+| Prototype | Production direction |
+| --- | --- |
+| Full replication of records to every node | Replicate each record to its home shard and the shards of its blocking keys, so memory and per-node apply cost also scale out. The view then needs a partitioned connected-components layer. |
+| Delta history kept in memory and in an ever-growing log | Compact once every node has a delta (causal stability), and bootstrap new nodes from a snapshot. |
+| Static member list and a timeout-based failure detector | Gossip membership such as SWIM, with dynamic join and leave. |
+| Hand-rolled TCP mesh | A log or messaging layer such as Kafka, NATS or Redpanda for transport, and RocksDB for local state. The CRDT merge is unchanged. |
+| Pure-Python Jaro-Winkler | A native implementation such as rapidfuzz, or a model server. Every node must use the same version, because convergence depends on the matcher being deterministic. |
+| Entity id is the minimum record id | A stable public entity id layered on top, because the minimum changes when clusters merge or split. |
+| A write is acknowledged once it is in one node's log | A write quorum (wait for k peer logs) closes the window where a node dies after acknowledging but before forwarding. |

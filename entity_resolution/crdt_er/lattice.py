@@ -56,6 +56,10 @@ class LWWMap(Generic[K, V]):
     def keys(self) -> Iterator[K]:
         return iter(self._entries)
 
+    def items(self) -> Iterator[Tuple[K, Tuple[Timestamp, Optional[V]]]]:
+        """All entries, tombstones included."""
+        return iter(self._entries.items())
+
     def max_timestamp(self) -> int:
         return max((ts[0] for ts, _ in self._entries.values()), default=0)
 
@@ -124,6 +128,15 @@ class ORSet(Generic[E]):
 
     def tags_of(self, elem: E) -> Set[Tag]:
         return set(self._live.get(elem, ()))
+
+    def is_removed(self, tag: Tag) -> bool:
+        return tag in self._removed
+
+    def add_items(self) -> Iterator[Tuple[Tag, E]]:
+        return iter(self._adds.items())
+
+    def removed_tags(self) -> Iterator[Tag]:
+        return iter(self._removed)
 
     def max_seq(self) -> int:
         seqs = [tag[1] for tag in self._adds] + [tag[1] for tag in self._removed]
