@@ -7,11 +7,12 @@ same clustering. Resolution is **incremental**: each change only re-examines
 the records it touches and the handful of clusters they belong to.
 
 ```
-pip install -r requirements.txt           # msgpack, used only by the distributed mode
+pip install -r requirements.txt           # msgpack, rapidfuzz, numpy (distributed mode only)
 python demo.py                            # single-process walk-through
 python ha_demo.py                         # 3-process cluster: kill, partition, restart
-python bench.py --nodes 1 2 4 --verify    # throughput vs cluster size
-python -m unittest discover -s tests -t . # 27 tests
+python bench.py --nodes 1 --records 50000 --match-workers 2 --verify   # one replica
+python bench.py --nodes 1 2 4 --python-similarity --verify             # cluster scaling
+python -m unittest discover -s tests -t . # 41 tests
 ```
 
 The first half of this document describes the CRDT core. The second half,
@@ -37,7 +38,7 @@ the clustering materialised and repairs it locally as deltas arrive.
 | `crdt_er/matching.py` | `Matcher` protocol (normalise + blocking keys + symmetric `match`), Jaro-Winkler, and a rule-based `PersonMatcher`. |
 | `crdt_er/engine.py` | `Replica`: local ops that emit deltas, `merge`, the incremental `_refresh`, queries, `check_invariants`, and the batch oracle `resolve_from_scratch`. |
 | `crdt_er/simulate.py` | `Network`: random-order, duplicating delivery plus full-state anti-entropy. |
-| `crdt_er/dist/` | Distributed mode: replicated state with match facts, node logic, asyncio server, client, log, simulator, launcher. |
+| `crdt_er/dist/` | Distributed mode: replicated state with match facts, node logic, block matcher, asyncio server, matcher workers, client, log, simulator, launcher. |
 | `tests/` | Lattice laws, conflict scenarios, randomized convergence, distributed chaos simulation, a real multi-process cluster test. |
 
 ## Replicated state
@@ -161,8 +162,14 @@ messages flow again.
   versions are current. Version numbers only grow, so a stale fact can never
   become valid again, and dropping stale facts keeps the merge a lattice join.
   Every node builds the same entity view from the same facts.
-* **Each node is one event loop.** There are no threads or locks inside a node.
-  Parallelism comes from running more processes.
+* **Each node is one replica, and it can use several cores.** A main process
+  runs one event loop with no threads or locks. It owns the state, the log,
+  the network and the entity view. Optional matcher worker processes
+  (`match_workers` in the cluster config) each own a slice of the node's
+  shards. The main process forwards records to them, and they send back facts.
+  A worker can lag behind without harm. Every fact names the record versions
+  it was computed from, and the main process drops facts about superseded
+  versions.
 
 ## Delivery, recovery and durability
 
@@ -182,26 +189,49 @@ always rescans it.
 
 ## Measured on this prototype
 
-These numbers come from 4 CPU cores shared by every node process and the load
-generator. There are 20,000 records, 256 shards, and `--verify` passes on every
-row, meaning the final view equals the batch oracle.
+All numbers come from a 4-core container. Every node process, every matcher
+worker and the load generator share those 4 cores. Each run ends only when
+every replica has finished matching and holds the same entity view, and
+`--verify` confirmed that view equals the batch oracle.
+
+**Throughput of one replica**, 50,000 records, native similarity
+(`rapidfuzz`), 3 runs per row:
+
+| Replica layout | Cores busy | Resolved records/s |
+| --- | --- | --- |
+| One process | 1 | 8,500 to 9,000 |
+| Main process + 2 matcher workers | 3 | 10,600 to 12,400 |
+| Main process + 3 matcher workers | 4 | 11,500 to 12,000 |
+| 2 replicas, each main + 1 worker | 4 | 10,400 on each replica |
+
+The main process spends about 75 microseconds per record on normalising,
+merging, logging, forwarding and maintaining the view. That caps one replica
+at about 13,000 records/s however many matcher workers it has. The third
+worker gains little here because the load generator needs a core too.
+
+**Scaling with cluster size**, 20,000 records, pure-Python similarity,
+256 shards:
 
 | Nodes | Normal blocks: rec/s | Speedup | Large blocks: rec/s | Speedup |
 | --- | --- | --- | --- | --- |
-| 1 | 2,400 | 1.0x | 1,040 | 1.0x |
-| 2 | 4,370 | 1.6x | 1,850 | 1.8x |
-| 4 | 5,590 | 2.3x | 3,000 | 2.9x |
+| 1 | 2,800 | 1.0x | 1,000 | 1.0x |
+| 2 | 4,900 | 1.75x | 2,000 | 2.0x |
+| 4 | 7,300 | 2.6x | 3,600 | 3.6x |
 
-"Resolved" means every node has finished matching and holds the same entity
-view. Comparisons split evenly across nodes. Scaling stays below linear for two
-reasons. Every node still applies every record and fact to its own view, which
-takes about 1 CPU-second per 20,000 records. And the 4-node run had 5 busy
-processes on 4 cores. The more each record costs to match, the closer the
-speedup gets to linear, which is why the large-block column scales better. A
-real deployment with an ML scoring model would sit further in that direction.
+Matching splits evenly across nodes. What does not split is the replicated
+part: every replica applies every record and every fact to its own copy.
+The more each record costs to match, the closer scaling gets to linear,
+which is why the large-block column scales better.
 
-The writes are acknowledged at 15,000 to 22,000 records/s on any cluster size,
-because acknowledging a write never waits for matching.
+**What full replication means for throughput.** Every replica processes the
+whole write stream, so the 10,000+ records/s each replica sustains is also the
+cluster's ceiling. Adding replicas adds availability and matching capacity,
+but not record-apply capacity. Going past one replica's ceiling means
+replicating each record only to the shards that need it (see the table at the
+end).
+
+Writes are acknowledged at 15,000 to 28,000 records/s, because acknowledging
+a write never waits for matching.
 
 `ha_demo.py` on 3 processes, abridged:
 
@@ -216,6 +246,25 @@ because acknowledging a write never waits for matching.
 [15.2s] identical state on all nodes: True; entities equal batch oracle: True
 ```
 
+`python ha_demo.py --match-workers 2 --similarity rapidfuzz` runs the same
+scenario with worker processes and reaches the same final view.
+
+## Matcher performance notes
+
+* `PersonMatcher(similarity="rapidfuzz")` computes Jaro-Winkler natively.
+  The pure-Python implementation follows Winkler's definition, where the
+  prefix bonus applies only above a Jaro score of 0.7, so both backends return
+  the same scores. Every replica of a cluster must still use the same backend,
+  because convergence depends on identical decisions.
+* Work is queued per block, and a block's whole queue is scored at once.
+  With the native backend, `match_block` scores every pair in one call and
+  applies the exact rules only to pairs whose names could pass a threshold.
+  A pair matched only through a shared email belongs to the email block,
+  which always comes first in key order, so this pre-filter loses nothing.
+* The benchmark's convergence check asks for the full view hash only after
+  the cheap checks pass. Hashing the view sorts every entity, and polling it
+  10 times a second used to cost a large share of a node's CPU.
+
 ## How it is tested
 
 * `tests/test_dist.py` drives the node logic through a deterministic
@@ -227,7 +276,15 @@ because acknowledging a write never waits for matching.
   breaking stale-fact removal, shard takeover, incarnations, anti-entropy or
   the pair deduplication makes these tests fail.
 * `tests/test_dist_cluster.py` runs the kill, partition and restart scenario on
-  real processes, and checks log truncation and incarnation persistence.
+  real processes, once with in-process matching and once with matcher worker
+  processes. It also checks log truncation and incarnation persistence.
+* `tests/test_matching.py` checks that both similarity backends agree on scores
+  and decisions, and that bulk `match_block` returns exactly the pairwise
+  matches it is responsible for, including large phone and email blocks.
+* Deliberately breaking any of eight mechanisms makes the suite fail. They are
+  stale-fact removal, shard takeover, incarnations, anti-entropy, the
+  smallest-shared-key rule, dropping late worker results, the native
+  pre-filter threshold, and the email-block shortcut.
 
 ## What a production version would change
 
@@ -237,6 +294,7 @@ because acknowledging a write never waits for matching.
 | Delta history kept in memory and in an ever-growing log | Compact once every node has a delta (causal stability), and bootstrap new nodes from a snapshot. |
 | Static member list and a timeout-based failure detector | Gossip membership such as SWIM, with dynamic join and leave. |
 | Hand-rolled TCP mesh | A log or messaging layer such as Kafka, NATS or Redpanda for transport, and RocksDB for local state. The CRDT merge is unchanged. |
-| Pure-Python Jaro-Winkler | A native implementation such as rapidfuzz, or a model server. Every node must use the same version, because convergence depends on the matcher being deterministic. |
+| One main process per replica applies every record (about 13,000 records/s ceiling) | Partitioned record replication, as in the first row, or a compiled implementation of the apply path. |
+| Rule-based matcher | A model server works too, provided every node uses the same model version, because convergence depends on the matcher being deterministic. |
 | Entity id is the minimum record id | A stable public entity id layered on top, because the minimum changes when clusters merge or split. |
 | A write is acknowledged once it is in one node's log | A write quorum (wait for k peer logs) closes the window where a node dies after acknowledging but before forwarding. |

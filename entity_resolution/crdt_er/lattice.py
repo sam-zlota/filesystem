@@ -56,6 +56,10 @@ class LWWMap(Generic[K, V]):
     def keys(self) -> Iterator[K]:
         return iter(self._entries)
 
+    def raw(self) -> Dict[K, Tuple[Timestamp, Optional[V]]]:
+        """The underlying entry dict, for read-only hot paths."""
+        return self._entries
+
     def items(self) -> Iterator[Tuple[K, Tuple[Timestamp, Optional[V]]]]:
         """All entries, tombstones included."""
         return iter(self._entries.items())

@@ -15,10 +15,12 @@ Responsibilities
    work, and anti-entropy can compute exactly which deltas a peer lacks.
 3. **Sharded matching.**  Blocking keys hash into ``n_shards`` shards.  Each
    shard is owned by the top ``compute_replicas`` live members under
-   rendezvous hashing.  A node only compares records inside blocks it owns,
-   and a pair sharing several keys is compared only under its smallest shared
-   key.  Results are published as facts.  When membership changes, shards
-   move and the new owner rescans them.
+   rendezvous hashing.  A node only compares records inside blocks it owns.
+   Work is queued per block and a whole block's queue is scored at once (in
+   one native call when the matcher supports ``match_block``).  A pair sharing
+   several keys is accepted only under its smallest shared key, so each fact
+   is emitted by exactly one shard.  When membership changes, shards move and
+   the new owner rescans them.
 4. **Incremental entity view.**  Edges are ``unlink? no : link? yes : valid
    fact?``, the same rule as the single-node engine, so at quiescence the view
    equals :func:`crdt_er.engine.resolve_from_scratch` on the same state.
@@ -40,6 +42,7 @@ from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Seq
 
 from ..matching import Matcher, Normalized, PersonMatcher
 from ..state import LINK, UNLINK, pair_key
+from .blocking import BlockMatcher
 from .state import Changes, DistState, Fact, Timestamp, Wire, combine, make_fact
 
 Delta = Tuple[str, int, Wire]  # (origin replica, seq, wire)
@@ -59,6 +62,7 @@ class Node:
         matcher: Optional[Matcher] = None,
         n_shards: int = 64,
         compute_replicas: int = 1,
+        matching: Optional[Any] = None,
     ) -> None:
         self.id = node_id
         self.incarnation = incarnation
@@ -79,14 +83,16 @@ class Node:
         self.extra: Dict[str, Set[int]] = defaultdict(set)
 
         # matching side
-        self.norm: Dict[str, Normalized] = {}
+        self.norm: Dict[str, Normalized] = {}  # every live record, normalised
         self.ver: Dict[str, Timestamp] = {}  # live record -> current version
         self._shard_cache: Dict[str, int] = {}
         self._rank_cache: Dict[Tuple[int, str], int] = {}
         self.alive: Set[str] = set(self.members)  # optimistic until a detector says otherwise
         self.owned: Set[int] = self._compute_owned(self.alive)
-        self.block: Dict[str, Set[str]] = {}
-        self.pending: Dict[str, Optional[Set[str]]] = {}  # rid -> keys to (re)match, None = all owned
+        # The block index and work queue for owned shards: in-process by
+        # default, or a pool of worker processes (see server.WorkerPool).
+        self.matching = matching if matching is not None else BlockMatcher(self.matcher, n_shards)
+        self.matching.reset(self.owned, ())
 
         # view side
         self.partners: Dict[str, Set[str]] = defaultdict(set)
@@ -124,45 +130,55 @@ class Node:
         """
         results: List[Any] = []
         parts: List[Wire] = []
+        unmerged: Dict[str, List[Any]] = {"r": [], "a": [], "x": []}
         changes = Changes()
 
-        def write(w: Wire) -> None:
-            parts.append(w)
-            changes.update(self.state.merge(w))
+        def flush() -> None:
+            # Writes are merged in bulk; ops that read state flush first so
+            # they observe earlier ops of the same batch.
+            if unmerged["r"] or unmerged["a"] or unmerged["x"]:
+                w = {k: v for k, v in unmerged.items() if v}
+                parts.append(w)
+                changes.update(self.state.merge(w))
+                unmerged["r"], unmerged["a"], unmerged["x"] = [], [], []
 
+        replica = self.replica
         for op in ops:
             kind = op[0]
             try:
                 if kind == "add":
                     rid = op[1] or self._fresh_rid()
-                    write({"r": [[rid, self._tick(), self.replica, dict(op[2])]]})
+                    unmerged["r"].append([rid, self._tick(), replica, dict(op[2])])
                     results.append(rid)
                 elif kind in ("update", "patch"):
+                    flush()
                     rid = op[1]
                     current = self.state.er.record(rid)
                     if current is None:
                         raise KeyError(f"{rid} is not a live record")
                     attrs = dict(op[2]) if kind == "update" else {**current, **op[2]}
-                    write({"r": [[rid, self._tick(), self.replica, attrs]]})
+                    unmerged["r"].append([rid, self._tick(), replica, attrs])
                     results.append(rid)
                 elif kind == "delete":
-                    write({"r": [[op[1], self._tick(), self.replica, None]]})
+                    unmerged["r"].append([op[1], self._tick(), replica, None])
                     results.append(op[1])
                 elif kind in ("link", "unlink"):
                     a, b = pair_key(op[1], op[2])
-                    write({"a": [[self.replica, self._tick(), LINK if kind == "link" else UNLINK, a, b]]})
+                    unmerged["a"].append([replica, self._tick(), LINK if kind == "link" else UNLINK, a, b])
                     results.append(True)
                 elif kind in ("retract_link", "retract_unlink"):
+                    flush()
                     a, b = pair_key(op[1], op[2])
                     which = LINK if kind == "retract_link" else UNLINK
                     tags = self.state.er.assertions.tags_of((which, a, b))
                     if tags:
-                        write({"x": [[t[0], t[1]] for t in tags]})
+                        unmerged["x"].extend([t[0], t[1]] for t in tags)
                     results.append(len(tags))
                 else:
                     raise ValueError(f"unknown op {kind!r}")
             except (KeyError, ValueError) as exc:
                 results.append({"error": str(exc)})
+        flush()
 
         if not parts:
             return results, None
@@ -260,26 +276,9 @@ class Node:
             return False
         self.alive = alive_set
         new_owned = self._compute_owned(alive_set)
-        gained = new_owned - self.owned
         changed = new_owned != self.owned
         self.owned = new_owned
-        self.block = {}
-        for rid, nn in self.norm.items():
-            gained_keys: Optional[Set[str]] = None
-            for k in nn.keys:
-                s = self.shard_of(k)
-                if s in new_owned:
-                    self.block.setdefault(k, set()).add(rid)
-                    if s in gained:
-                        gained_keys = gained_keys or set()
-                        gained_keys.add(k)
-            if gained_keys:
-                if rid in self.pending:
-                    cur = self.pending[rid]
-                    if cur is not None:
-                        cur |= gained_keys
-                else:
-                    self.pending[rid] = gained_keys
+        self.matching.reset(new_owned, ((rid, self.ver[rid], nn) for rid, nn in self.norm.items()))
         self.metrics["membership_changes"] += 1
         return changed
 
@@ -287,7 +286,7 @@ class Node:
     # matching
     # ------------------------------------------------------------------
     def has_pending(self) -> bool:
-        return bool(self.pending)
+        return self.matching.has_pending()
 
     def step_matching(
         self,
@@ -296,48 +295,22 @@ class Node:
         now: float = 0.0,
         clock: Callable[[], float] = time.perf_counter,
     ) -> Optional[Delta]:
-        """Match up to ``max_records`` pending records (or for ``budget_s``
-        seconds) inside owned blocks.  Returns a fact delta to broadcast."""
-        deadline = None if budget_s is None else clock() + budget_s
-        done = 0
-        found: List[Fact] = []
+        """Run in-process matching for a while; returns a fact delta to broadcast."""
+        return self.publish_facts(self.matching.step(budget_s, max_records, clock), now)
+
+    def publish_facts(self, facts: Iterable[Sequence[Any]], now: float = 0.0) -> Optional[Delta]:
+        """Adopt facts found by this node's matching (in-process or a worker)
+        and turn the new, still-current ones into a delta to broadcast."""
         st = self.state
-        while self.pending:
-            if max_records is not None and done >= max_records:
-                break
-            if deadline is not None and done and clock() >= deadline:
-                break
-            rid = next(iter(self.pending))
-            keys = self.pending.pop(rid)
-            done += 1
-            nr = self.norm.get(rid)
-            if nr is None:
-                continue
-            ts_r = st.live_version(rid)
-            for k in (nr.keys if keys is None else keys & nr.keys):
-                if self.shard_of(k) not in self.owned:
-                    continue
-                for c in self.block.get(k, ()):
-                    if c == rid:
-                        continue
-                    if c in self.pending:
-                        ck = self.pending[c]
-                        if ck is None or k in ck:
-                            continue  # c is queued for this key and will compare against rid itself
-                    nc = self.norm[c]
-                    if min(nr.keys & nc.keys) != k:
-                        continue  # evaluated under the pair's smallest shared key instead
-                    self.metrics["comparisons"] += 1
-                    if self.matcher.match(nr, nc):
-                        f = make_fact(rid, ts_r, c, st.live_version(c))  # type: ignore[arg-type]
-                        if f not in st.facts:
-                            found.append(f)
-        self.metrics["records_matched"] += done
-        if not found:
+        ver = self.ver
+        # keep facts about the current live versions only (a worker may lag)
+        fresh = [f for f in map(tuple, facts)
+                 if ver.get(f[0]) == (f[1], f[2]) and ver.get(f[3]) == (f[4], f[5]) and f not in st.facts]
+        if not fresh:
             return None
-        wire: Wire = {"f": [list(f) for f in found]}
-        self._after_merge(st.merge(wire))
-        self.metrics["facts_emitted"] += len(found)
+        wire: Wire = {"f": [list(f) for f in fresh]}
+        self._after_merge(st.merge(wire, facts_validated=True))
+        self.metrics["facts_emitted"] += len(fresh)
         return self._originate(wire, now)
 
     # ------------------------------------------------------------------
@@ -360,35 +333,24 @@ class Node:
         for a, b in ch.pairs:
             hard.add(a)
             hard.add(b)
+        matching = self.matching
         for rid in ch.records:
             old = self.norm.pop(rid, None)
             if old is not None:
                 hard.add(rid)
-                for k in old.keys:
-                    bucket = self.block.get(k)
-                    if bucket is not None:
-                        bucket.discard(rid)
-                        if not bucket:
-                            del self.block[k]
             attrs = er.record(rid)
             if attrs is None:
                 self.ver.pop(rid, None)
-                self.pending.pop(rid, None)
+                if old is not None:
+                    matching.remove(rid)
                 continue
-            self.ver[rid] = self.state.live_version(rid)  # type: ignore[assignment]
+            ver = self.state.live_version(rid)
+            self.ver[rid] = ver  # type: ignore[assignment]
             if old is None:
                 fresh.append(rid)
             nn = self.matcher.normalize(attrs)
             self.norm[rid] = nn
-            owned_any = False
-            for k in nn.keys:
-                if self.shard_of(k) in self.owned:
-                    self.block.setdefault(k, set()).add(rid)
-                    owned_any = True
-            if owned_any:
-                self.pending[rid] = None
-            else:
-                self.pending.pop(rid, None)
+            matching.upsert(rid, ver, nn)
 
         if hard:
             self._refresh_view(hard)
@@ -520,10 +482,10 @@ class Node:
             "records": len(self.norm),
             "facts": len(self.state.facts),
             "entities": len(self.members_of),
-            "pending": len(self.pending),
+            "pending": self.matching.pending_count(),
             "vv": {o: c for o, c in self.contig.items()},
             "gaps": sum(len(e) for e in self.extra.values()),
-            "metrics": dict(self.metrics),
+            "metrics": {**getattr(self.matching, "metrics", {}), **self.metrics},
         }
 
     # ------------------------------------------------------------------
@@ -562,5 +524,6 @@ class Node:
         assert self.entities() == expect, "entity view diverged"
         for f in st.facts:
             assert not st.fact_is_stale(f), "stale fact retained"
-        for k, bucket in self.block.items():
-            assert self.shard_of(k) in self.owned and bucket
+        if isinstance(self.matching, BlockMatcher):
+            assert self.matching.owned == self.owned
+            self.matching.check()

@@ -64,6 +64,23 @@ class DistStateTest(unittest.TestCase):
         self.assertEqual(len(results), 1)
 
 
+class PublishFactsTest(unittest.TestCase):
+    def test_results_from_a_lagging_worker_are_dropped(self):
+        from crdt_er.dist.node import Node
+        node = Node("n0", 1, ["n0"])
+        node.submit([["add", "a", {"name": "Ana Lee", "email": "x@y.z"}],
+                     ["add", "b", {"name": "Bo Chan", "email": "q@y.z"}]])
+        old_a, b = node.ver["a"], node.ver["b"]
+        node.submit([["update", "a", {"name": "Ana Lee", "email": "new@y.z"}]])
+        stale = make_fact("a", old_a, "b", b)        # computed by a worker before the update
+        self.assertIsNone(node.publish_facts([list(stale)]))
+        self.assertNotIn(stale, node.state.facts)
+        current = make_fact("a", node.ver["a"], "b", b)
+        self.assertIsNotNone(node.publish_facts([list(current)]))
+        self.assertEqual(node.entity_of_record("b"), "a")
+        node.check_invariants()
+
+
 class SimTest(unittest.TestCase):
     def test_shards_are_partitioned_and_move_on_failure(self):
         sim = SimCluster(3, random.Random(1), n_shards=32)
@@ -180,25 +197,56 @@ class SimTest(unittest.TestCase):
             with self.subTest(seed=seed):
                 self.run_chaos(100 + seed, n_nodes=5, compute_replicas=2)
 
+    backend = "python"
+
     def test_matching_work_is_divided(self):
         rng = random.Random(7)
-        matcher = PersonMatcher(zip_blocking="zip+initials")
+        matcher = PersonMatcher(zip_blocking="zip+initials", similarity=self.backend)
         sim = SimCluster(4, rng, matcher=matcher, n_shards=64, loss=0, dup=0)
         people = make_people(rng, 60)
         for i in range(400):
             sim.submit(sim.ids[i % 4], [["add", None, perturb(rng, rng.choice(people))]])
         sim.quiesce()
         assert_converged(self, sim)
-        work = [sim.nodes[i].metrics["comparisons"] for i in sim.ids]
-        # every candidate pair (sharing >= 1 blocking key) is compared exactly
-        # once in the whole cluster: no node repeats another node's work
-        norms = sim.nodes["n0"].norm
-        rids = sorted(norms)
-        candidate_pairs = sum(
-            1 for i, a in enumerate(rids) for b in rids[i + 1:] if norms[a].keys & norms[b].keys
-        )
-        self.assertEqual(sum(work), candidate_pairs)
+        work = [sim.nodes[i].matching.metrics["pairs_scored"] for i in sim.ids]
+        emitted = [sim.nodes[i].metrics["facts_emitted"] for i in sim.ids]
+        # every match fact is produced by exactly one node: no node repeats
+        # another node's result (records were only added, so no fact went stale)
+        self.assertEqual(sum(emitted), len(sim.nodes["n0"].state.facts))
+        self.assertGreater(min(work), 0)
         self.assertLess(max(work), 0.5 * sum(work))
+
+try:
+    import rapidfuzz  # noqa: F401
+    HAVE_RAPIDFUZZ = True
+except ImportError:  # pragma: no cover
+    HAVE_RAPIDFUZZ = False
+
+
+@unittest.skipUnless(HAVE_RAPIDFUZZ, "pip install rapidfuzz numpy")
+class NativeBackendSimTest(SimTest):
+    """The whole simulated-cluster suite again, with the native backend."""
+    backend = "rapidfuzz"
+
+    def run_chaos(self, seed, n_nodes, compute_replicas):
+        pass  # covered by SimTest; this class adds the large-block cases below
+
+    def test_large_blocks_bulk_load_matches_oracle(self):
+        rng = random.Random(11)
+        matcher = PersonMatcher(zip_blocking="zip", similarity="rapidfuzz")
+        sim = SimCluster(3, rng, matcher=matcher, n_shards=32, loss=0.1, dup=0.2)
+        people = make_people(rng, 40)
+        for i in range(600):
+            sim.submit(sim.ids[i % 3], [["add", None, perturb(rng, rng.choice(people))]])
+            if i % 7 == 0:
+                sim.deliver_one()
+        sim.crash("n1", lose_tail=2)
+        sim.refresh_membership()
+        for nid in ("n0", "n2"):
+            while sim.match_step(nid, max_records=200):
+                pass
+        sim.quiesce()
+        assert_converged(self, sim)
 
 
 if __name__ == "__main__":

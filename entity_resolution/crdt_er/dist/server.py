@@ -12,7 +12,7 @@ Peer protocol (frames are ``pack([...])``):
       ["vv", summary, want_reply]    anti-entropy: "here is what I hold"
 Client protocol (request/response on the same connection):
   ["write", ops] -> ["ok", results]
-  ["stats"] | ["entities"] | ["entity_of", [rid...]] | ["dump"]
+  ["stats", {"view_hash": bool}] | ["entities"] | ["entity_of", [rid...]] | ["dump"]
   ["partition", [peer...]]           test hook: drop traffic with these peers
   ["shutdown"]
 """
@@ -25,6 +25,7 @@ import logging
 import os
 import random
 import signal
+import sys
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -34,6 +35,128 @@ from .wal import Wal, bump_incarnation
 from .wire import pack, read_frame
 
 log = logging.getLogger("crdt_er.node")
+
+
+class WorkerPool:
+    """Matching side of a node spread over K worker processes.
+
+    Presents the same interface as :class:`BlockMatcher` to the Node
+    (``upsert`` / ``remove`` / ``reset`` / ``has_pending`` / ``pending_count``)
+    but forwards records to the worker that owns each blocking key's shard
+    (worker ``shard % K``).  Facts come back asynchronously and are handed to
+    ``on_facts``.  A worker crash takes the whole node down: the cluster
+    already tolerates node failures, so there is no separate recovery path.
+    """
+
+    def __init__(self, k: int, shards: int, matcher_cfg: Dict[str, Any]) -> None:
+        self.k = k
+        self.n_shards = shards
+        self.cfg = json.dumps({"shards": shards, "matcher": matcher_cfg})
+        self.owned: Set[int] = set()
+        self.holder: Dict[str, Set[int]] = {}  # rid -> workers that hold it
+        self.buf: List[List[Any]] = [[] for _ in range(k)]
+        self.sent = [0] * k
+        self.applied = [0] * k
+        self.remote_pending = [0] * k
+        self.events = [asyncio.Event() for _ in range(k)]
+        self.procs: List[Any] = []
+        self._shard_cache: Dict[str, int] = {}
+        self.on_facts = lambda facts: None
+        self.metrics: Dict[str, int] = {}
+
+    def shard_of(self, key: str) -> int:
+        s = self._shard_cache.get(key)
+        if s is None:
+            import zlib
+            s = self._shard_cache[key] = zlib.crc32(key.encode()) % self.n_shards
+        return s
+
+    def _send(self, w: int, msg: List[Any]) -> None:
+        self.buf[w].append(msg)
+        self.sent[w] += 1
+        self.events[w].set()
+
+    @staticmethod
+    def _rec(rid: str, ver: Tuple[int, str], nn: Any) -> List[Any]:
+        # a matcher that precomputes ``data`` (PersonMatcher) needs only that
+        if nn.data is not None:
+            return [rid, ver[0], ver[1], list(nn.keys), None, nn.data]
+        return [rid, ver[0], ver[1], list(nn.keys), nn.fields, None]
+
+    # -- BlockMatcher interface -----------------------------------------------------
+    def upsert(self, rid: str, ver: Tuple[int, str], nn: Any) -> None:
+        need = {self.shard_of(k) % self.k for k in nn.keys if self.shard_of(k) in self.owned}
+        for w in self.holder.get(rid, set()) - need:
+            self._send(w, ["x", rid])
+        if need:
+            rec = ["u"] + self._rec(rid, ver, nn)
+            for w in need:
+                self._send(w, rec)
+            self.holder[rid] = need
+        else:
+            self.holder.pop(rid, None)
+
+    def remove(self, rid: str) -> None:
+        for w in self.holder.pop(rid, ()):
+            self._send(w, ["x", rid])
+
+    def reset(self, owned: Any, records: Any) -> None:
+        self.owned = set(owned)
+        per_worker: List[List[Any]] = [[] for _ in range(self.k)]
+        self.holder = {}
+        for rid, ver, nn in records:
+            need = {self.shard_of(k) % self.k for k in nn.keys if self.shard_of(k) in self.owned}
+            if need:
+                rec = self._rec(rid, ver, nn)
+                for w in need:
+                    per_worker[w].append(rec)
+                self.holder[rid] = need
+        for w in range(self.k):
+            self._send(w, ["reset", sorted(s for s in self.owned if s % self.k == w), per_worker[w]])
+
+    def has_pending(self) -> bool:
+        return any(self.sent[w] != self.applied[w] or self.remote_pending[w] for w in range(self.k))
+
+    def pending_count(self) -> int:
+        return sum(self.remote_pending) + sum(self.sent[w] - self.applied[w] for w in range(self.k))
+
+    # -- processes ---------------------------------------------------------------------
+    async def start(self) -> List[asyncio.Task]:
+        tasks = []
+        for w in range(self.k):
+            proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-m", "crdt_er.dist.matchworker", self.cfg,
+                stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, limit=2**26,
+            )
+            self.procs.append(proc)
+            tasks.append(asyncio.create_task(self._writer(w, proc)))
+            tasks.append(asyncio.create_task(self._reader(w, proc)))
+        return tasks
+
+    async def _writer(self, w: int, proc: Any) -> None:
+        while True:
+            await self.events[w].wait()
+            self.events[w].clear()
+            msgs, self.buf[w] = self.buf[w], []
+            proc.stdin.write(pack(["batch", msgs]))
+            await proc.stdin.drain()
+
+    async def _reader(self, w: int, proc: Any) -> None:
+        while True:
+            try:
+                kind, facts, applied, pending = await read_frame(proc.stdout)
+            except asyncio.IncompleteReadError:
+                log.error("matcher worker %d exited; stopping node", w)
+                os._exit(3)
+            self.applied[w] = applied
+            self.remote_pending[w] = pending
+            if facts:
+                self.on_facts(facts)
+
+    def stop(self) -> None:
+        for proc in self.procs:
+            if proc.returncode is None:
+                proc.kill()
 
 
 class PeerLink:
@@ -105,11 +228,18 @@ class NodeServer:
 
         incarnation = bump_incarnation(data_dir)
         matcher = PersonMatcher(**cluster.get("matcher", {}))
+        k = int(cluster.get("match_workers", 0))
+        self.pool: Optional[WorkerPool] = (
+            WorkerPool(k, cluster.get("shards", 64), cluster.get("matcher", {})) if k > 0 else None
+        )
         self.node = Node(
             node_id, incarnation, list(nodes), matcher,
             n_shards=cluster.get("shards", 64),
             compute_replicas=cluster.get("compute_replicas", 1),
+            matching=self.pool,
         )
+        if self.pool is not None:
+            self.pool.on_facts = self._worker_facts
         self.wal = Wal(data_dir)
         t0 = time.perf_counter()
         replayed = sum(1 for d in self.wal.replay() if self.node.receive(*d, now=0.0))
@@ -194,7 +324,9 @@ class NodeServer:
             return ["ok", results]
         if kind == "stats":
             st = node.stats()
-            st["view_hash"] = node.view_hash()
+            # the view hash sorts every entity: only computed when asked for
+            if len(msg) > 1 and msg[1].get("view_hash"):
+                st["view_hash"] = node.view_hash()
             st["blocked"] = sorted(self.blocked)
             return ["ok", st]
         if kind == "entities":
@@ -240,6 +372,11 @@ class NodeServer:
             if peers:
                 self.links[random.choice(peers)].send(["vv", self.node.vv_summary(), True])
 
+    def _worker_facts(self, facts: List[Any]) -> None:
+        delta = self.node.publish_facts(facts, now=time.monotonic())
+        if delta is not None:
+            self._originated(delta)
+
     async def _matcher(self) -> None:
         while True:
             if not self.node.has_pending():
@@ -253,6 +390,8 @@ class NodeServer:
 
     # -- lifecycle ---------------------------------------------------------------
     def _stop(self) -> None:
+        if self.pool is not None:
+            self.pool.stop()
         self.wal.close()
         for task in asyncio.all_tasks():
             task.cancel()
@@ -264,8 +403,12 @@ class NodeServer:
             loop.add_signal_handler(sig, self._stop)
         log.info("%s listening on %s:%d", self.id, *self.addr)
         tasks = [asyncio.create_task(l.run()) for l in self.links.values()]
-        tasks += [asyncio.create_task(c()) for c in
-                  (self._heartbeats, self._failure_detector, self._anti_entropy, self._matcher)]
+        loops = [self._heartbeats, self._failure_detector, self._anti_entropy]
+        if self.pool is None:
+            loops.append(self._matcher)
+        else:
+            tasks += await self.pool.start()
+        tasks += [asyncio.create_task(c()) for c in loops]
         try:
             async with self._server:
                 await asyncio.gather(self._server.serve_forever(), *tasks)

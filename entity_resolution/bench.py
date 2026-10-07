@@ -26,7 +26,20 @@ from crdt_er.dist.state import DistState
 from crdt_er.dist.workload import make_records
 from crdt_er.matching import PersonMatcher
 
-MATCHER = {"zip_blocking": "zip+initials"}
+MATCHER = {"zip_blocking": "zip+initials", "similarity": "rapidfuzz"}
+
+
+def child_pids(pid: int) -> list:
+    out = []
+    for entry in os.listdir("/proc"):
+        if entry.isdigit():
+            try:
+                with open(f"/proc/{entry}/stat") as fh:
+                    if int(fh.read().rsplit(")", 1)[1].split()[1]) == pid:
+                        out.append(int(entry))
+            except (OSError, IndexError, ValueError):
+                pass
+    return out
 
 
 def proc_cpu_seconds(pid: int) -> float:
@@ -41,7 +54,8 @@ def proc_cpu_seconds(pid: int) -> float:
 
 async def run_one(n_nodes: int, records, args) -> dict:
     workdir = tempfile.mkdtemp(prefix=f"crdt-er-bench-{n_nodes}-")
-    cluster = LocalCluster(workdir, n_nodes, shards=args.shards, matcher=MATCHER, fsync=args.fsync)
+    cluster = LocalCluster(workdir, n_nodes, shards=args.shards, matcher=MATCHER, fsync=args.fsync,
+                           match_workers=args.match_workers)
     cluster.start_all()
     try:
         await cluster.wait_ready()
@@ -65,6 +79,7 @@ async def run_one(n_nodes: int, records, args) -> dict:
         st = await cluster.wait_converged(poll=0.1)
         t_done = time.perf_counter() - t0
         cpu = [proc_cpu_seconds(cluster.procs[n].pid) for n in cluster.ids]
+        worker_cpu = [sum(proc_cpu_seconds(c) for c in child_pids(cluster.procs[n].pid)) for n in cluster.ids]
 
         result = {
             "nodes": n_nodes,
@@ -72,8 +87,9 @@ async def run_one(n_nodes: int, records, args) -> dict:
             "resolved_rps": len(records) / t_done,
             "seconds": t_done,
             "entities": next(iter(st.values()))["entities"],
-            "comparisons": [st[n]["metrics"].get("comparisons", 0) for n in cluster.ids],
+            "comparisons": [st[n]["metrics"].get("pairs_scored", 0) for n in cluster.ids],
             "cpu": cpu,
+            "worker_cpu": worker_cpu,
         }
         if args.verify:
             dump = await cluster.ask(cluster.ids[0], ["dump"], timeout=120)
@@ -96,16 +112,22 @@ async def main() -> None:
     ap.add_argument("--writers", type=int, default=8)
     ap.add_argument("--shards", type=int, default=64)
     ap.add_argument("--fsync", action="store_true")
+    ap.add_argument("--match-workers", type=int, default=0,
+                    help="matcher worker processes per node (0 = match in the node process)")
+    ap.add_argument("--python-similarity", action="store_true", help="pure-Python Jaro-Winkler instead of rapidfuzz")
     ap.add_argument("--verify", action="store_true", help="check the final view against the batch oracle")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--zips", type=int, default=6, help="fewer zips = bigger blocks = more matching per record")
     args = ap.parse_args()
 
+    if args.python_similarity:
+        MATCHER["similarity"] = "python"
     records = make_records(args.records, seed=args.seed, zips=args.zips)
     print(f"{args.records} records, batches of {args.batch}, {args.writers} writers, "
-          f"{args.shards} shards, {os.cpu_count()} CPUs, fsync={'on' if args.fsync else 'off'}")
+          f"{args.shards} shards, {os.cpu_count()} CPUs, fsync={'on' if args.fsync else 'off'}, "
+          f"similarity={MATCHER['similarity']}, match workers/node={args.match_workers}")
     print(f"{'nodes':>5} {'ingest rec/s':>13} {'resolved rec/s':>15} {'speedup':>8} "
-          f"{'seconds':>8} {'entities':>9}  {'cpu s/node':>10}  comparisons per node")
+          f"{'seconds':>8} {'entities':>9}  {'main cpu':>8} {'worker cpu':>10}  pairs scored per node")
     base = None
     for n in args.nodes:
         r = await run_one(n, records, args)
@@ -113,7 +135,7 @@ async def main() -> None:
         extra = f"  oracle={'ok' if r.get('oracle_ok') else 'MISMATCH'}" if "oracle_ok" in r else ""
         print(f"{r['nodes']:>5} {r['ingest_rps']:>13.0f} {r['resolved_rps']:>15.0f} "
               f"{r['resolved_rps'] / base:>7.2f}x {r['seconds']:>8.1f} {r['entities']:>9}  "
-              f"{max(r['cpu']):>10.1f}  {r['comparisons']}{extra}", flush=True)
+              f"{max(r['cpu']):>8.1f} {max(r['worker_cpu']):>10.1f}  {r['comparisons']}{extra}", flush=True)
 
 
 if __name__ == "__main__":

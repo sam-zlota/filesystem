@@ -100,11 +100,12 @@ class DistState:
         return None if entry is None or entry[1] is None else entry[0]
 
     def fact_is_stale(self, f: Fact) -> bool:
-        for rid, lamport, rep in ((f[0], f[1], f[2]), (f[3], f[4], f[5])):
-            v = self.version(rid)
-            if v is not None and v > (lamport, rep):
-                return True
-        return False
+        entries = self.er.records.raw()
+        e = entries.get(f[0])
+        if e is not None and e[0] > (f[1], f[2]):
+            return True
+        e = entries.get(f[3])
+        return e is not None and e[0] > (f[4], f[5])
 
     def fact_is_valid(self, f: Fact) -> bool:
         return (
@@ -113,14 +114,22 @@ class DistState:
         )
 
     # -- join ----------------------------------------------------------------
-    def merge(self, wire: Wire) -> Changes:
+    def merge(self, wire: Wire, facts_validated: bool = False) -> Changes:
+        """Join ``wire`` into this state.  ``facts_validated`` skips the
+        staleness check for facts the caller has just checked against the
+        current versions (a node publishing its own matching results)."""
         ch = Changes()
-        records = self.er.records
+        entries = self.er.records.raw()
+        max_counter = self.max_counter
         for rid, lamport, rep, attrs in wire.get("r", ()):
-            if records.set(rid, (lamport, rep), attrs):
+            ts = (lamport, rep)
+            cur = entries.get(rid)
+            if cur is None or cur[0] < ts:  # same rule as LWWMap.set, inlined
+                entries[rid] = (ts, attrs)
                 ch.records.add(rid)
-            if lamport > self.max_counter:
-                self.max_counter = lamport
+            if lamport > max_counter:
+                max_counter = lamport
+        self.max_counter = max_counter
         assertions = self.er.assertions
         for rep, seq, kind, a, b in wire.get("a", ()):
             if assertions.add((rep, seq), (kind, a, b)):
@@ -136,7 +145,7 @@ class DistState:
                 self.max_counter = seq
         for raw in wire.get("f", ()):
             f: Fact = tuple(raw)  # type: ignore[assignment]
-            if f in self.facts or self.fact_is_stale(f):
+            if f in self.facts or (not facts_validated and self.fact_is_stale(f)):
                 continue
             self.facts.add(f)
             self.facts_by_rid[f[0]].add(f)

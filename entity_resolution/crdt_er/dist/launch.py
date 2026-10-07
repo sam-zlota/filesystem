@@ -30,7 +30,7 @@ def free_ports(n: int) -> List[int]:
 
 class LocalCluster:
     def __init__(self, workdir: str, n: int, shards: int = 64, matcher: Optional[Dict[str, Any]] = None,
-                 compute_replicas: int = 1, fsync: bool = False) -> None:
+                 compute_replicas: int = 1, fsync: bool = False, match_workers: int = 0) -> None:
         self.workdir = workdir
         self.ids = [f"n{i}" for i in range(n)]
         ports = free_ports(n)
@@ -40,6 +40,7 @@ class LocalCluster:
             "shards": shards,
             "compute_replicas": compute_replicas,
             "matcher": matcher or {},
+            "match_workers": match_workers,
         }
         os.makedirs(workdir, exist_ok=True)
         self.config_path = os.path.join(workdir, "cluster.json")
@@ -94,26 +95,28 @@ class LocalCluster:
                         raise
                     await asyncio.sleep(0.1)
 
-    async def stats(self, nids: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+    async def stats(self, nids: Optional[List[str]] = None, view_hash: bool = False) -> Dict[str, Dict[str, Any]]:
         nids = nids or list(self.procs)
-        res = await asyncio.gather(*(self.ask(n, ["stats"]) for n in nids))
+        res = await asyncio.gather(*(self.ask(n, ["stats", {"view_hash": view_hash}]) for n in nids))
         return dict(zip(nids, res))
 
     async def wait_converged(self, nids: Optional[List[str]] = None, timeout: float = 600.0,
                              poll: float = 0.2) -> Dict[str, Dict[str, Any]]:
         """Until every node has no pending matching, the same version vector
-        and the same entity view, on two consecutive polls."""
+        and the same entity view, on two consecutive polls.  The (expensive)
+        view hash is only requested once the cheap checks pass."""
         deadline = time.monotonic() + timeout
         stable = 0
         while True:
             st = await self.stats(nids)
             vals = list(st.values())
-            same = all(
-                v["pending"] == 0 and v["gaps"] == 0 and v["vv"] == vals[0]["vv"]
-                and v["view_hash"] == vals[0]["view_hash"]
-                for v in vals
-            )
-            stable = stable + 1 if same else 0
+            quiet = all(v["pending"] == 0 and v["gaps"] == 0 and v["vv"] == vals[0]["vv"] for v in vals)
+            if quiet:
+                st = await self.stats(nids, view_hash=True)
+                vals = list(st.values())
+                quiet = all(v["pending"] == 0 and v["vv"] == vals[0]["vv"]
+                            and v["view_hash"] == vals[0]["view_hash"] for v in vals)
+            stable = stable + 1 if quiet else 0
             if stable >= 2:
                 return st
             if time.monotonic() > deadline:

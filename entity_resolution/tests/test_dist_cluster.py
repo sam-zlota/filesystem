@@ -57,5 +57,21 @@ class ClusterTest(unittest.TestCase):
         self.assertTrue(out["oracle_ok"])
 
 
+    def test_same_scenario_with_matcher_worker_processes(self):
+        try:
+            import rapidfuzz  # noqa: F401
+        except ImportError:  # pragma: no cover
+            self.skipTest("pip install rapidfuzz numpy")
+        import ha_demo
+        out = asyncio.run(ha_demo.run(records=6000, batch=30, rate_batches_per_s=20, quiet=True,
+                                      match_workers=2, similarity="rapidfuzz"))
+        self.assertEqual(out["failed_batches"], 0)
+        self.assertEqual(out["records"], 6000)
+        self.assertEqual(out["owned_after_kill"], 64)
+        self.assertTrue(out["diverged_during_partition"])
+        self.assertTrue(out["states_identical"])
+        self.assertTrue(out["oracle_ok"])
+
+
 if __name__ == "__main__":
     unittest.main()
