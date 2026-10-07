@@ -205,10 +205,28 @@ So:
 | union-find + member sets | per-component clustering | near-linear in edges |
 | `cluster_of`, `clusters` | materialized view | O(1) lookups |
 
-### Complexity (per change)
-Blocking query + scoring of k candidates + BFS and clustering of the affected
-component C: roughly `O(k + |E_C| log |E_C|)`. The demo measures about **0.9 ms
-per incremental edit vs ~1.2 s for a full batch** over 2,000 records.
+### Complexity and measured throughput
+Per change: a blocking query, scoring of k candidates, then BFS and
+clustering of the affected component C, so roughly `O(k + |E_C| log |E_C|)`.
+
+`benchmarks/bench.py` (single Python process, one core, synthetic data with
+~2.5 noisy records per person; ops/s):
+
+| records | ingest | edit | match/non-match | delete | bulk receive | edit + sync (2 nodes) | pairs scored |
+|---|---|---|---|---|---|---|---|
+| 1k  | 1,816 | 1,527 | 13,130 | 13,799 | 1,914 | 770 | 3.4k |
+| 5k  | 1,285 | 1,015 | 13,290 | 12,679 | 1,512 | 524 | 65k |
+| 20k | 842 | 542 | 12,158 | 8,897 | 961 | 246 | 919k |
+| 50k | 485 | 279 | 10,196 | 5,075 | 533 | 119 | 5.7M |
+
+* Time goes to pairwise scoring (~40%) and MinHash/LSH (~36%). The CRDT
+  layer is ~10-20% and clustering ~3%.
+* Throughput falls with N because candidates per record grow with N: name-only
+  LSH puts every "John Smith" in one bucket, so this is close to O(N^2) in
+  common names. This is a blocking problem, not a CRDT one. Fixes: composite
+  or capped blocking keys, caching normalized fields, batched MinHash updates,
+  and vectorized scoring (`rapidfuzz.process.cdist`).
+* Assertions and deletes skip scoring, so they stay fast.
 
 ## 6. Assumptions
 
